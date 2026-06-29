@@ -160,6 +160,185 @@ tr:hover td{background:var(--surface2)}
 .detalle-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 .detalle-subtitulo{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem}
 
+/* ======================================================
+   RESPONSIVE GENERAL
+====================================================== */
+
+/* Pantallas grandes (TV y monitores grandes) */
+@media (min-width: 1600px){
+
+    body{
+        font-size:16px;
+    }
+
+    .content{
+        padding:2rem 3rem;
+    }
+
+    .sidebar{
+        width:260px;
+    }
+
+    .metric-value{
+        font-size:28px;
+    }
+
+    table{
+        font-size:15px;
+    }
+
+    .card{
+        padding:1.8rem;
+    }
+
+    .btn,
+    .btn-sm{
+        font-size:14px;
+    }
+}
+
+/* Notebook */
+@media (max-width:1200px){
+
+    .content{
+        padding:1.2rem;
+    }
+
+    .form-grid{
+        grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    }
+
+}
+
+/* Tablets */
+@media (max-width:992px){
+
+    .main{
+        flex-direction:column;
+    }
+
+    .sidebar{
+        width:100%;
+        display:flex;
+        overflow-x:auto;
+        border-right:none;
+        border-bottom:1px solid var(--border);
+        padding:0;
+    }
+
+    .nav-item{
+        flex:1;
+        justify-content:center;
+        white-space:nowrap;
+        border-left:none;
+        border-bottom:3px solid transparent;
+        padding:14px;
+    }
+
+    .nav-item.active{
+        border-bottom:3px solid var(--accent);
+    }
+
+    .content{
+        padding:1rem;
+    }
+
+    .metrics{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .detalle-grid{
+        grid-template-columns:1fr;
+    }
+
+}
+
+/* Celulares */
+@media (max-width:768px){
+
+    .topbar{
+        height:auto;
+        padding:12px;
+        flex-direction:column;
+        gap:10px;
+        align-items:flex-start;
+    }
+
+    .topbar-right{
+        width:100%;
+        display:flex;
+        flex-wrap:wrap;
+        gap:8px;
+    }
+
+    .topbar-right .btn-sm{
+        flex:1;
+        justify-content:center;
+    }
+
+    .metrics{
+        grid-template-columns:1fr;
+    }
+
+    .form-grid{
+        grid-template-columns:1fr;
+    }
+
+    .section-header{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .modal{
+        max-width:100%;
+    }
+
+    .mes-semanas{
+        grid-template-columns:1fr;
+    }
+
+    .tbl-wrap{
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+    }
+
+    table{
+        min-width:900px;
+    }
+
+}
+
+/* Celulares pequeños */
+@media (max-width:480px){
+
+    body{
+        font-size:13px;
+    }
+
+    .login-card{
+        padding:1.5rem;
+    }
+
+    .metric-value{
+        font-size:22px;
+    }
+
+    .btn,
+    .btn-sm,
+    .btn-login{
+        width:100%;
+    }
+
+    .empresa-list{
+        flex-direction:column;
+    }
+
+    .empresa-tag{
+        width:100%;
+        justify-content:space-between;
+    }
+
+}
 </style>
 </head>
 <body>
