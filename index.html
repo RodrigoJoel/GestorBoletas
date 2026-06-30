@@ -160,185 +160,31 @@ tr:hover td{background:var(--surface2)}
 .detalle-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 .detalle-subtitulo{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem}
 
-/* ======================================================
-   RESPONSIVE GENERAL
-====================================================== */
-
-/* Pantallas grandes (TV y monitores grandes) */
-@media (min-width: 1600px){
-
-    body{
-        font-size:16px;
-    }
-
-    .content{
-        padding:2rem 3rem;
-    }
-
-    .sidebar{
-        width:260px;
-    }
-
-    .metric-value{
-        font-size:28px;
-    }
-
-    table{
-        font-size:15px;
-    }
-
-    .card{
-        padding:1.8rem;
-    }
-
-    .btn,
-    .btn-sm{
-        font-size:14px;
-    }
-}
-
-/* Notebook */
-@media (max-width:1200px){
-
-    .content{
-        padding:1.2rem;
-    }
-
-    .form-grid{
-        grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    }
-
-}
-
-/* Tablets */
-@media (max-width:992px){
-
-    .main{
-        flex-direction:column;
-    }
-
-    .sidebar{
-        width:100%;
-        display:flex;
-        overflow-x:auto;
-        border-right:none;
-        border-bottom:1px solid var(--border);
-        padding:0;
-    }
-
-    .nav-item{
-        flex:1;
-        justify-content:center;
-        white-space:nowrap;
-        border-left:none;
-        border-bottom:3px solid transparent;
-        padding:14px;
-    }
-
-    .nav-item.active{
-        border-bottom:3px solid var(--accent);
-    }
-
-    .content{
-        padding:1rem;
-    }
-
-    .metrics{
-        grid-template-columns:repeat(2,1fr);
-    }
-
-    .detalle-grid{
-        grid-template-columns:1fr;
-    }
-
-}
-
-/* Celulares */
-@media (max-width:768px){
-
-    .topbar{
-        height:auto;
-        padding:12px;
-        flex-direction:column;
-        gap:10px;
-        align-items:flex-start;
-    }
-
-    .topbar-right{
-        width:100%;
-        display:flex;
-        flex-wrap:wrap;
-        gap:8px;
-    }
-
-    .topbar-right .btn-sm{
-        flex:1;
-        justify-content:center;
-    }
-
-    .metrics{
-        grid-template-columns:1fr;
-    }
-
-    .form-grid{
-        grid-template-columns:1fr;
-    }
-
-    .section-header{
-        flex-direction:column;
-        align-items:flex-start;
-    }
-
-    .modal{
-        max-width:100%;
-    }
-
-    .mes-semanas{
-        grid-template-columns:1fr;
-    }
-
-    .tbl-wrap{
-        overflow-x:auto;
-        -webkit-overflow-scrolling:touch;
-    }
-
-    table{
-        min-width:900px;
-    }
-
-}
-
-/* Celulares pequeños */
-@media (max-width:480px){
-
-    body{
-        font-size:13px;
-    }
-
-    .login-card{
-        padding:1.5rem;
-    }
-
-    .metric-value{
-        font-size:22px;
-    }
-
-    .btn,
-    .btn-sm,
-    .btn-login{
-        width:100%;
-    }
-
-    .empresa-list{
-        flex-direction:column;
-    }
-
-    .empresa-tag{
-        width:100%;
-        justify-content:space-between;
-    }
-
-}
+/* CAJAS */
+.caja-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:.75rem;overflow:hidden;box-shadow:var(--shadow)}
+.caja-header{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:.85rem 1.25rem;cursor:pointer;transition:background .12s}
+.caja-header:hover{background:var(--surface2)}
+.caja-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.caja-info-main{min-width:0}
+.caja-cajera{font-weight:600;font-size:14px}
+.caja-meta{font-size:11px;color:var(--text3);margin-top:1px}
+.caja-total-wrap{text-align:right}
+.caja-total-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.caja-total-val{font-size:16px;font-weight:700}
+.caja-body{display:none;border-top:1px solid var(--border);padding:1rem 1.25rem}
+.caja-body.open{display:block}
+.caja-chevron{font-size:12px;color:var(--text3);transition:transform .2s;flex-shrink:0}
+.caja-chevron.open{transform:rotate(180deg)}
+.medios-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:.85rem}
+.medio-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .85rem}
+.medio-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.medio-val{font-size:15px;font-weight:600}
+.diferencia-ok{color:var(--success);background:var(--success-bg);border:1px solid var(--success-border);border-radius:6px;padding:6px 12px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.diferencia-neg{color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:6px;padding:6px 12px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.caja-comentario{font-size:12px;color:var(--text2);background:var(--surface2);border-left:3px solid var(--border2);padding:6px 10px;border-radius:4px;margin-top:.6rem;font-style:italic}
+.filtro-cajas{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.filtro-cajas input,.filtro-cajas select{height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size:12px;color:var(--text);background:var(--surface)}
+.resumen-cajas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1rem}
 </style>
 </head>
 <body>
@@ -393,6 +239,10 @@ tr:hover td{background:var(--surface2)}
         Cta. Corriente
       </div>
       <div class="nav-sep"></div>
+      <div class="nav-item" onclick="showSection('cajas',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Cajas
+      </div>
       <div class="nav-item" onclick="showSection('empresas',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M9 21V7l7-4v18"/><path d="M13 21V11h4v10"/></svg>
         Empresas
@@ -408,38 +258,35 @@ tr:hover td{background:var(--surface2)}
           <span id="semana-info-badge" class="semana-info"></span>
         </div>
 
-        <!-- Bloqueo si no hay semana activa -->
-        <div id="bloqueo-semana" class="bloqueo" style="display:none">
-          <h3>📋 No hay semana activa</h3>
-          <p>Para cargar boletas primero tenés que iniciar una nueva semana con un fondo asignado.</p>
-          <div class="form-inline">
-            <input type="number" id="inp-fondo-bloqueo" placeholder="Fondo de la semana ($)" min="0">
-            <button class="btn primary" onclick="iniciarSemanaDesdeBloqueo()">Iniciar semana</button>
-          </div>
-        </div>
-
         <div id="contenido-diario">
-          <div class="metrics">
+          <div id="alert-semana-diario"></div>
+
+          <div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
             <div class="metric">
-              <div class="metric-label">Fondo semanal</div>
-              <div class="metric-value" id="m-fondo-sem">$0</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Gastado esta semana</div>
+              <div class="metric-label">📤 Total egresado sem.</div>
               <div class="metric-value red" id="m-gastado-sem">$0</div>
             </div>
             <div class="metric">
-              <div class="metric-label">Disponible</div>
-              <div class="metric-value green" id="m-disponible">$0</div>
-              <div class="saldo-bar"><div class="saldo-fill" id="saldo-fill" style="width:100%"></div></div>
+              <div class="metric-label">💵 Pagado efectivo</div>
+              <div class="metric-value" id="m-tot-efectivo">$0</div>
             </div>
             <div class="metric">
-              <div class="metric-label">Cta. Cte. pendiente</div>
+              <div class="metric-label">🏦 Pagado transf.</div>
+              <div class="metric-value" id="m-tot-transf">$0</div>
+           </div>
+            <div class="metric">
+              <div class="metric-label">💳 Pagado tarjeta</div>
+              <div class="metric-value" id="m-tot-tarjeta">$0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">📋 Cta. Cte. pendiente</div>
               <div class="metric-value amber" id="m-cte-pend-sem">$0</div>
             </div>
+            <div class="metric">
+              <div class="metric-label">📥 Ingresos del día</div>
+              <div class="metric-value green" id="m-tot-ingresos">$0</div>
+            </div>
           </div>
-
-          <div id="alert-saldo"></div>
 
           <div class="card">
             <div class="card-title">Cargar boleta</div>
@@ -481,6 +328,7 @@ tr:hover td{background:var(--surface2)}
                 <select id="inp-medio">
                   <option value="Efectivo">💵 Efectivo</option>
                   <option value="Transferencia">🏦 Transferencia</option>
+                  <option value="Tarjeta">💳 Tarjeta Déb./Cré.</option>
                 </select>
               </div>
               <div class="field" id="field-fecha-cte" style="display:none">
@@ -514,39 +362,12 @@ tr:hover td{background:var(--surface2)}
           <h2>Gestión semanal</h2>
         </div>
 
-        <div class="card">
-          <div class="card-title">Nueva semana</div>
-          <div class="form-grid">
-            <div class="field">
-              <label>Fondo asignado ($)</label>
-              <input type="number" id="inp-sem-fondo" placeholder="Ej: 1000" min="0">
-            </div>
-            <div class="field" style="display:flex;align-items:flex-end;gap:8px">
-              <button class="btn primary full" onclick="iniciarSemana()">+ Iniciar semana</button>
-              <button class="btn danger" onclick="cerrarSemana()" style="white-space:nowrap">Cerrar semana</button>
-            </div>
+        <div class="card" style="padding:.85rem 1.25rem">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <button class="btn primary" onclick="iniciarSemana()">+ Nueva semana</button>
+            <button class="btn danger" onclick="cerrarSemana()">Cerrar semana actual</button>
+            <span id="sem-activa-info" style="font-size:12px;color:var(--text3)"></span>
           </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">
-            Agregar saldo a la semana actual
-            <span style="font-size:12px;font-weight:400;color:var(--text3)">Para reforzar el fondo cuando sea necesario</span>
-          </div>
-          <div class="form-grid">
-            <div class="field">
-              <label>Monto a agregar ($)</label>
-              <input type="number" id="inp-recarga" placeholder="Ej: 500" min="0" step="0.01">
-            </div>
-            <div class="field">
-              <label>Motivo (opcional)</label>
-              <input type="text" id="inp-recarga-motivo" placeholder="Ej: Refuerzo de caja">
-            </div>
-            <div class="field" style="display:flex;align-items:flex-end">
-              <button class="btn success full" onclick="agregarSaldo()">+ Agregar saldo</button>
-            </div>
-          </div>
-          <div id="historial-recargas" style="margin-top:.75rem"></div>
         </div>
 
         <div class="metrics">
@@ -555,28 +376,20 @@ tr:hover td{background:var(--surface2)}
             <div class="metric-value" id="m-cant-semanas">0</div>
           </div>
           <div class="metric">
-            <div class="metric-label">Fondo semana actual</div>
-            <div class="metric-value" id="m-sem-fondo-act">$0</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">Egresado (contado)</div>
+            <div class="metric-label">Egresado sem. actual</div>
             <div class="metric-value red" id="m-sem-eg">$0</div>
           </div>
           <div class="metric">
-            <div class="metric-label">Pagado cta. cte. esta sem.</div>
+            <div class="metric-label">Ingresos sem. actual</div>
+            <div class="metric-value green" id="m-sem-ingresos">$0</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Cta. Cte. pagada sem.</div>
             <div class="metric-value amber" id="m-sem-cte-pag">$0</div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-title">Historial de semanas</div>
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>#</th><th>Inicio</th><th>Cierre</th><th>Fondo</th><th>Contado</th><th>Cta. Cte. pagada</th><th>Total egresado</th><th>Saldo</th><th>Estado</th></tr></thead>
-              <tbody id="tbl-semanas"></tbody>
-            </table>
-          </div>
-        </div>
+        <div id="lista-semanas"></div>
       </div>
 
       <!-- MENSUAL -->
@@ -594,16 +407,16 @@ tr:hover td{background:var(--surface2)}
             <div class="metric-value" id="m-cant-meses">0</div>
           </div>
           <div class="metric">
-            <div class="metric-label">Mes actual — contado</div>
+            <div class="metric-label">Total egresado mes actual</div>
             <div class="metric-value red" id="m-mes-eg">$0</div>
           </div>
           <div class="metric">
-            <div class="metric-label">Mes actual — cta. cte.</div>
-            <div class="metric-value amber" id="m-mes-cte">$0</div>
+            <div class="metric-label">Total ingresado mes actual</div>
+            <div class="metric-value green" id="m-mes-ingresos">$0</div>
           </div>
           <div class="metric">
-            <div class="metric-label">Total mes actual</div>
-            <div class="metric-value" id="m-mes-total">$0</div>
+            <div class="metric-label">Balance mes actual</div>
+            <div class="metric-value" id="m-mes-balance">$0</div>
           </div>
         </div>
         <div id="lista-meses"></div>
@@ -639,6 +452,104 @@ tr:hover td{background:var(--surface2)}
             </table>
           </div>
         </div>
+      </div>
+
+      <!-- CAJAS -->
+      <div id="sec-cajas" class="section">
+        <div class="section-header">
+          <h2>Cajas diarias</h2>
+          <span id="fecha-cajas-badge" class="semana-info"></span>
+        </div>
+
+        <!-- Resumen del día -->
+        <div class="resumen-cajas-grid">
+          <div class="metric"><div class="metric-label">Cajas hoy</div><div class="metric-value" id="mc-cantidad">0</div></div>
+          <div class="metric"><div class="metric-label">Efectivo total</div><div class="metric-value green" id="mc-efectivo">$0</div></div>
+          <div class="metric"><div class="metric-label">PedidosYa total</div><div class="metric-value" id="mc-py">$0</div></div>
+          <div class="metric"><div class="metric-label">Mercado Pago</div><div class="metric-value" id="mc-mp">$0</div></div>
+          <div class="metric"><div class="metric-label">Tarjeta Déb./Cré.</div><div class="metric-value" id="mc-tarjeta">$0</div></div>
+          <div class="metric"><div class="metric-label">Total del día</div><div class="metric-value" id="mc-total">$0</div></div>
+          <div class="metric"><div class="metric-label">Diferencia acumulada</div><div class="metric-value" id="mc-dif">$0</div></div>
+        </div>
+
+        <!-- Formulario nueva caja -->
+        <div class="card">
+          <div class="card-title">Registrar nueva caja</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Cajera</label>
+              <input type="text" id="cj-cajera" placeholder="Nombre de la cajera">
+            </div>
+            <div class="field">
+              <label>Fecha</label>
+              <input type="date" id="cj-fecha">
+            </div>
+            <div class="field">
+              <label>Hora inicio</label>
+              <input type="time" id="cj-hora-inicio">
+            </div>
+            <div class="field">
+              <label>Hora cierre</label>
+              <input type="time" id="cj-hora-cierre">
+            </div>
+          </div>
+          <div style="margin:.75rem 0 .5rem;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px">Medios de cobro</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>💵 Efectivo</label>
+              <input type="number" id="cj-efectivo" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="field">
+              <label>🛵 PedidosYa Débito</label>
+              <input type="number" id="cj-py-debito" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="field">
+              <label>🛵 PedidosYa Efectivo</label>
+              <input type="number" id="cj-py-efectivo" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="field">
+              <label>💙 Mercado Pago</label>
+              <input type="number" id="cj-mp" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="field">
+              <label>💳 Tarjeta Déb./Cré.</label>
+              <input type="number" id="cj-tarjeta" placeholder="0.00" min="0" step="0.01">
+            </div>
+          </div>
+          <div style="margin:.75rem 0 .5rem;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px">Diferencia de caja</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>¿Faltó o sobró plata?</label>
+              <select id="cj-dif-tipo">
+                <option value="ninguna">Sin diferencia</option>
+                <option value="falta">Falta dinero</option>
+                <option value="sobra">Sobra dinero</option>
+              </select>
+            </div>
+            <div class="field" id="cj-dif-monto-wrap" style="display:none">
+              <label>Monto diferencia ($)</label>
+              <input type="number" id="cj-dif-monto" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="field full">
+              <label>Comentarios (opcional)</label>
+              <input type="text" id="cj-comentario" placeholder="Ej: Cliente pagó de más, se devolvió vuelto...">
+            </div>
+          </div>
+          <div style="margin-top:.85rem;display:flex;justify-content:flex-end">
+            <button class="btn primary" onclick="guardarCaja()" style="min-width:160px">💾 Guardar caja</button>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtro-cajas">
+          <label style="font-size:12px;font-weight:500;color:var(--text2)">Filtrar:</label>
+          <input type="date" id="filtro-caja-fecha" onchange="renderCajas()">
+          <input type="text" id="filtro-caja-cajera" placeholder="Cajera..." onkeyup="renderCajas()" style="width:140px">
+          <button class="btn-sm" onclick="document.getElementById('filtro-caja-fecha').value='';document.getElementById('filtro-caja-cajera').value='';renderCajas()">Limpiar</button>
+        </div>
+
+        <!-- Lista de cajas -->
+        <div id="lista-cajas"></div>
       </div>
 
       <!-- EMPRESAS -->
@@ -688,6 +599,7 @@ tr:hover td{background:var(--surface2)}
       <select id="modal-medio-pago">
         <option value="Efectivo">💵 Efectivo</option>
         <option value="Transferencia">🏦 Transferencia</option>
+        <option value="Tarjeta">💳 Tarjeta Déb./Cré.</option>
       </select>
     </div>
     <div class="modal-actions">
@@ -720,9 +632,9 @@ const fbApp = initializeApp(firebaseConfig);
 const auth  = getAuth(fbApp);
 const db    = getFirestore(fbApp);
 
-let boletas = [], semanas = [], meses = [], empresas = [], recargas = [];
+let boletas = [], semanas = [], meses = [], empresas = [], recargas = [], cajas = [];
 let pagoCtePendienteId = null;
-let unsubBoletas, unsubSemanas, unsubMeses, unsubEmpresas, unsubRecargas;
+let unsubBoletas, unsubSemanas, unsubMeses, unsubEmpresas, unsubRecargas, unsubCajas;
 
 // ── AUTH ──
 onAuthStateChanged(auth, user => {
@@ -734,7 +646,7 @@ onAuthStateChanged(auth, user => {
   } else {
     document.getElementById('login-screen').style.display='flex';
     document.getElementById('app-screen').style.display='none';
-    [unsubBoletas,unsubSemanas,unsubMeses,unsubEmpresas,unsubRecargas].forEach(u=>u&&u());
+    [unsubBoletas,unsubSemanas,unsubMeses,unsubEmpresas,unsubRecargas,unsubCajas].forEach(u=>u&&u());
   }
 });
 
@@ -770,6 +682,10 @@ function iniciarListeners(){
   unsubRecargas = onSnapshot(query(collection(db,'recargas'),orderBy('fechaHora','asc')), snap=>{
     recargas = snap.docs.map(d=>({id:d.id,...d.data()}));
     render();
+  });
+  unsubCajas = onSnapshot(query(collection(db,'cajas'),orderBy('fecha','desc')), snap=>{
+    cajas = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderCajas();
   });
 }
 
@@ -809,7 +725,6 @@ window.toggleCamposCarga = function(){
 // ── BOLETAS ──
 window.agregarBoleta = async function(){
   const sem = semanaActiva();
-  if(!sem){ alert('Primero iniciá una semana en la sección Semanal.'); return; }
   const prov   = document.getElementById('inp-prov').value.trim();
   const empresa= document.getElementById('inp-empresa').value;
   const cat    = document.getElementById('inp-cat').value;
@@ -824,7 +739,7 @@ window.agregarBoleta = async function(){
   const ahora = new Date().toISOString();
   await addDoc(collection(db,'boletas'),{
     fecha: hoy(), fechaHora: ahora,
-    semanaId: sem.id, semanaNum: sem.num,
+    semanaId: sem?sem.id:null, semanaNum: sem?sem.num:null,
     proveedor: prov, empresa, categoria: cat,
     monto, tipo, medio: medio||null,
     fechaCte: fechaCte||null,
@@ -871,16 +786,16 @@ window.confirmarPago = async function(){
 };
 
 // ── SEMANAS ──
-async function _crearSemana(fondo){
+async function _crearSemana(){
   await addDoc(collection(db,'semanas'),{
-    num: semanas.length+1, inicio: hoy(), fin: null, fondo, cerrada: false
+    num: semanas.length+1, inicio: hoy(), fin: null, cerrada: false
   });
 }
 
-async function _iniciarSemana(fondo){
+async function _iniciarSemana(){
   const act = semanaActiva();
   if(act){ alert('Hay una semana activa. Cerrala primero desde la sección Semanal.'); return false; }
-  await _crearSemana(fondo);
+  await _crearSemana();
   // Si estamos entre el 1 y el 5 del mes, preguntar si abrir mes también
   const diaDelMes = new Date().getDate();
   if(diaDelMes >= 1 && diaDelMes <= 5){
@@ -899,15 +814,8 @@ async function _iniciarSemana(fondo){
 }
 
 window.iniciarSemana = async function(){
-  const fondo = parseFloat(document.getElementById('inp-sem-fondo').value)||0;
-  if(!fondo){ alert('Ingresá el fondo de la semana'); return; }
-  if(await _iniciarSemana(fondo)) document.getElementById('inp-sem-fondo').value='';
-};
-
-window.iniciarSemanaDesdeBloqueo = async function(){
-  const fondo = parseFloat(document.getElementById('inp-fondo-bloqueo').value)||0;
-  if(!fondo){ alert('Ingresá el fondo de la semana'); return; }
-  if(await _iniciarSemana(fondo)) document.getElementById('inp-fondo-bloqueo').value='';
+  if(!confirm('¿Iniciar una nueva semana?')) return;
+  await _iniciarSemana();
 };
 
 window.cerrarSemana = async function(){
@@ -960,6 +868,172 @@ window.cerrarMes = async function(){
   await updateDoc(doc(db,'meses',activo.id),{ cerrado:true, fin:hoy() });
 };
 
+// ── CAJAS ──
+window.guardarCaja = async function(){
+  const cajera   = document.getElementById('cj-cajera').value.trim();
+  const fecha    = document.getElementById('cj-fecha').value;
+  const hInicio  = document.getElementById('cj-hora-inicio').value;
+  const hCierre  = document.getElementById('cj-hora-cierre').value;
+  const efectivo = parseFloat(document.getElementById('cj-efectivo').value)||0;
+  const pyDeb    = parseFloat(document.getElementById('cj-py-debito').value)||0;
+  const pyEfec   = parseFloat(document.getElementById('cj-py-efectivo').value)||0;
+  const mp       = parseFloat(document.getElementById('cj-mp').value)||0;
+  const tarjeta  = parseFloat(document.getElementById('cj-tarjeta').value)||0;
+  const difTipo  = document.getElementById('cj-dif-tipo').value;
+  const difMonto = difTipo!=='ninguna' ? (parseFloat(document.getElementById('cj-dif-monto').value)||0) : 0;
+  const comentario = document.getElementById('cj-comentario').value.trim();
+
+  if(!cajera){ alert('Ingresá el nombre de la cajera'); return; }
+  if(!fecha) { alert('Ingresá la fecha de la caja'); return; }
+
+  const total = efectivo + pyDeb + pyEfec + mp + tarjeta;
+  const diferencia = difTipo==='falta' ? -difMonto : difTipo==='sobra' ? difMonto : 0;
+
+  await addDoc(collection(db,'cajas'),{
+    cajera, fecha, horaInicio: hInicio||null, horaCierre: hCierre||null,
+    efectivo, pyDebito: pyDeb, pyEfectivo: pyEfec, mercadoPago: mp, tarjeta,
+    total, difTipo, difMonto, diferencia,
+    comentario: comentario||null,
+    creadoEn: new Date().toISOString()
+  });
+
+  // Limpiar form
+  ['cj-cajera','cj-hora-inicio','cj-hora-cierre','cj-efectivo',
+   'cj-py-debito','cj-py-efectivo','cj-mp','cj-tarjeta','cj-dif-monto','cj-comentario'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('cj-dif-tipo').value='ninguna';
+  document.getElementById('cj-dif-monto-wrap').style.display='none';
+  document.getElementById('cj-fecha').value = hoy();
+};
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const difSel = document.getElementById('cj-dif-tipo');
+  if(difSel){
+    difSel.addEventListener('change', function(){
+      document.getElementById('cj-dif-monto-wrap').style.display =
+        this.value!=='ninguna' ? 'block' : 'none';
+    });
+  }
+  const fechaEl = document.getElementById('cj-fecha');
+  if(fechaEl) fechaEl.value = hoy();
+  const fechaFiltro = document.getElementById('filtro-caja-fecha');
+  if(fechaFiltro) fechaFiltro.value = hoy();
+});
+
+window.eliminarCaja = async function(id){
+  if(!confirm('¿Eliminar esta caja?')) return;
+  await deleteDoc(doc(db,'cajas',id));
+};
+
+window.toggleCajaBody = function(id, chevId){
+  const b=document.getElementById(id);
+  const ch=document.getElementById(chevId);
+  if(!b) return;
+  b.classList.toggle('open');
+  if(ch) ch.classList.toggle('open');
+};
+
+window.renderCajas = function(){
+  const fechaFiltro  = (document.getElementById('filtro-caja-fecha')||{}).value || hoy();
+  const cajeraFiltro = ((document.getElementById('filtro-caja-cajera')||{}).value||'').toLowerCase();
+
+  // Badge fecha
+  const badge = document.getElementById('fecha-cajas-badge');
+  if(badge) badge.textContent = fmtF(fechaFiltro);
+
+  let cajasVistas = cajas.filter(cj=>{
+    const okFecha   = !fechaFiltro  || cj.fecha===fechaFiltro;
+    const okCajera  = !cajeraFiltro || cj.cajera.toLowerCase().includes(cajeraFiltro);
+    return okFecha && okCajera;
+  });
+
+  // Resumen del día filtrado
+  const totalEfec    = cajasVistas.reduce((a,b)=>a+(b.efectivo||0)+(b.pyEfectivo||0),0);
+  const totalPY      = cajasVistas.reduce((a,b)=>a+(b.pyDebito||0)+(b.pyEfectivo||0),0);
+  const totalMP      = cajasVistas.reduce((a,b)=>a+(b.mercadoPago||0),0);
+  const totalTarjeta = cajasVistas.reduce((a,b)=>a+(b.tarjeta||0),0);
+  const totalGen     = cajasVistas.reduce((a,b)=>a+(b.total||0),0);
+  const totalDif     = cajasVistas.reduce((a,b)=>a+(b.diferencia||0),0);
+
+  const setM = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  setM('mc-cantidad', cajasVistas.length);
+  setM('mc-efectivo', fmt(totalEfec));
+  setM('mc-py',       fmt(totalPY));
+  setM('mc-mp',       fmt(totalMP));
+  setM('mc-tarjeta',  fmt(totalTarjeta));
+  setM('mc-total',    fmt(totalGen));
+  const difEl = document.getElementById('mc-dif');
+  if(difEl){
+    difEl.textContent = (totalDif>=0?'+':'')+fmt(totalDif);
+    difEl.className   = 'metric-value '+(totalDif<0?'red':totalDif>0?'amber':'green');
+  }
+
+  const lista = document.getElementById('lista-cajas');
+  if(!lista) return;
+
+  if(!cajasVistas.length){
+    lista.innerHTML='<div style="text-align:center;color:var(--text3);padding:2rem;font-style:italic;font-size:13px">Sin cajas registradas para este filtro.</div>';
+    return;
+  }
+
+  lista.innerHTML = cajasVistas.map((cj,i)=>{
+    const inicial = cj.cajera.trim().charAt(0).toUpperCase();
+    const horario = [cj.horaInicio, cj.horaCierre].filter(Boolean).join(' → ') || 'Sin horario';
+    const difHtml = cj.diferencia===0
+      ? '<span class="diferencia-ok">✓ Sin diferencia</span>'
+      : cj.diferencia<0
+        ? `<span class="diferencia-neg">▼ Falta ${fmt(Math.abs(cj.diferencia))}</span>`
+        : `<span class="diferencia-ok">▲ Sobra ${fmt(cj.diferencia)}</span>`;
+    const uid = 'caja-'+cj.id;
+    const chid = 'chev-'+cj.id;
+    return `<div class="caja-card">
+      <div class="caja-header" onclick="toggleCajaBody('${uid}','${chid}')">
+        <div class="caja-avatar">${inicial}</div>
+        <div class="caja-info-main">
+          <div class="caja-cajera">${cj.cajera}</div>
+          <div class="caja-meta">${fmtF(cj.fecha)} &nbsp;·&nbsp; ${horario}</div>
+        </div>
+        <div class="caja-total-wrap">
+          <div class="caja-total-label">Total</div>
+          <div class="caja-total-val" style="color:var(--success)">${fmt(cj.total||0)}</div>
+        </div>
+        <span class="caja-chevron" id="${chid}">▼</span>
+      </div>
+      <div class="caja-body" id="${uid}">
+        <div class="medios-grid">
+          <div class="medio-item">
+            <div class="medio-label">💵 Efectivo</div>
+            <div class="medio-val">${fmt(cj.efectivo||0)}</div>
+          </div>
+          <div class="medio-item">
+            <div class="medio-label">🛵 PY Débito</div>
+            <div class="medio-val">${fmt(cj.pyDebito||0)}</div>
+          </div>
+          <div class="medio-item">
+            <div class="medio-label">🛵 PY Efectivo</div>
+            <div class="medio-val">${fmt(cj.pyEfectivo||0)}</div>
+          </div>
+          <div class="medio-item">
+            <div class="medio-label">💙 Mercado Pago</div>
+            <div class="medio-val">${fmt(cj.mercadoPago||0)}</div>
+          </div>
+          <div class="medio-item">
+            <div class="medio-label">💳 Tarjeta</div>
+            <div class="medio-val">${fmt(cj.tarjeta||0)}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:.5rem">
+          ${difHtml}
+          <button class="icon-btn danger" onclick="eliminarCaja('${cj.id}')" title="Eliminar caja">✕</button>
+        </div>
+        ${cj.comentario?`<div class="caja-comentario">💬 ${cj.comentario}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+};
+
 // ── EMPRESAS ──
 window.agregarEmpresa = async function(){
   const nombre = document.getElementById('inp-empresa-nueva').value.trim();
@@ -979,45 +1053,39 @@ function render(){
   const sem = semanaActiva();
 
   // ── DIARIO ──
-  const bloqueo  = document.getElementById('bloqueo-semana');
-  const contenido= document.getElementById('contenido-diario');
+  document.getElementById('semana-info-badge').textContent =
+    sem ? `Semana ${sem.num} — desde ${fmtF(sem.inicio)}` : 'Sin semana activa';
+
+  const alertDiario = document.getElementById('alert-semana-diario');
   if(!sem){
-    bloqueo.style.display='block'; contenido.style.display='none';
-    document.getElementById('semana-info-badge').textContent='Sin semana activa';
+    alertDiario.innerHTML='<div class="alert info">ℹ Sin semana activa. Podés cargar boletas igual; se asignarán cuando inicies una semana.</div>';
   } else {
-    bloqueo.style.display='none'; contenido.style.display='block';
-    document.getElementById('semana-info-badge').textContent=
-      `Semana ${sem.num} — desde ${fmtF(sem.inicio)}`;
+    alertDiario.innerHTML='';
+  }
 
-    // Recargas de la semana actual
-    const recargasSem = recargas.filter(r=>r.semanaId===sem.id);
-    const totalRecargas = recargasSem.reduce((a,r)=>a+r.monto,0);
-    const fondoTotal = sem.fondo + totalRecargas;
+  // Boletas de la semana actual (o todas si no hay semana)
+  const bSem = sem ? boletas.filter(b=>b.semanaId===sem.id) : boletas.filter(b=>b.fecha===h);
+  const gastadoContado = bSem.filter(b=>b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
+  const ctePendMonto = boletas.filter(b=>b.tipo==='cte'&&!b.pagadaCte).reduce((a,b)=>a+b.monto,0);
 
-    // Boletas de la semana actual (contado)
-    const bSem = boletas.filter(b=>b.semanaId===sem.id);
-    const gastadoContado = bSem.filter(b=>b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
+  // Totales por medio de pago (boletas contado de la semana)
+  const boletasContadoSem = bSem.filter(b=>b.tipo==='contado');
+  const totEfectivo = boletasContadoSem.filter(b=>b.medio==='Efectivo').reduce((a,b)=>a+b.monto,0);
+  const totTransf   = boletasContadoSem.filter(b=>b.medio==='Transferencia').reduce((a,b)=>a+b.monto,0);
+  const totTarjeta  = boletasContadoSem.filter(b=>b.medio==='Tarjeta').reduce((a,b)=>a+b.monto,0);
+  // Cta cte pagada esta semana por medio
+  const ctePagSemEf = sem?boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id&&b.medioPagoCte==='Efectivo').reduce((a,b)=>a+b.monto,0):0;
+  const ctePagSemTr = sem?boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id&&b.medioPagoCte==='Transferencia').reduce((a,b)=>a+b.monto,0):0;
+  const ctePagSemTj = sem?boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id&&b.medioPagoCte==='Tarjeta').reduce((a,b)=>a+b.monto,0):0;
+  // Ingresos del día (cajas de hoy)
+  const ingresosHoy = cajas.filter(cj=>cj.fecha===h).reduce((a,cj)=>a+(cj.total||0),0);
 
-    // Cta cte pendientes de CUALQUIER semana (siguen mostrándose hasta que se paguen)
-    const ctePendTodas = boletas.filter(b=>b.tipo==='cte'&&!b.pagadaCte);
-    const ctePendMonto = ctePendTodas.reduce((a,b)=>a+b.monto,0);
-    const disponible = fondoTotal - gastadoContado;
-
-    document.getElementById('m-fondo-sem').textContent   = fmt(fondoTotal)+(totalRecargas>0?` <span style="font-size:11px;color:var(--success)">(+${fmt(totalRecargas)} recargado)</span>`:'');
-    document.getElementById('m-gastado-sem').textContent = fmt(gastadoContado);
-    document.getElementById('m-disponible').textContent  = fmt(disponible);
-    document.getElementById('m-disponible').className    = 'metric-value '+(disponible<0?'red':disponible<fondoTotal*0.2?'amber':'green');
-    document.getElementById('m-cte-pend-sem').textContent= fmt(ctePendMonto);
-
-    const pct = fondoTotal>0?Math.max(0,Math.min(100,(disponible/fondoTotal)*100)):100;
-    const fill=document.getElementById('saldo-fill');
-    fill.style.width=pct+'%';
-    fill.style.background=pct<20?'var(--danger)':pct<40?'var(--warning)':'var(--success)';
-
-    const alertEl=document.getElementById('alert-saldo');
-    if(disponible<0) alertEl.innerHTML='<div class="alert danger">⚠ Saldo negativo — los gastos superan el fondo disponible.</div>';
-    else if(disponible<fondoTotal*0.1&&fondoTotal>0) alertEl.innerHTML='<div class="alert warning">⚠ Saldo bajo — menos del 10% del fondo disponible.</div>';
-    else alertEl.innerHTML='';
+  document.getElementById('m-gastado-sem').textContent  = fmt(gastadoContado);
+  document.getElementById('m-tot-efectivo').textContent = fmt(totEfectivo+ctePagSemEf);
+  document.getElementById('m-tot-transf').textContent   = fmt(totTransf+ctePagSemTr);
+  document.getElementById('m-tot-tarjeta').textContent  = fmt(totTarjeta+ctePagSemTj);
+  document.getElementById('m-cte-pend-sem').textContent = fmt(ctePendMonto);
+  document.getElementById('m-tot-ingresos').textContent = fmt(ingresosHoy);
 
     // Tabla: boletas de la semana actual + cta cte pendientes de semanas anteriores
     const ctePendAnteriores = boletas.filter(b=>b.tipo==='cte'&&!b.pagadaCte&&b.semanaId!==sem.id);
@@ -1053,69 +1121,106 @@ function render(){
     }).join('');
   }
 
-  // Historial recargas en card
-  const hrEl = document.getElementById('historial-recargas');
-  if(hrEl){
-    const sem2 = semanaActiva();
-    if(sem2){
-      const recs = recargas.filter(r=>r.semanaId===sem2.id);
-      if(recs.length){
-        hrEl.innerHTML='<div style="font-size:12px;color:var(--text2);border-top:1px solid var(--border);padding-top:.5rem;margin-top:.5rem"><strong>Recargas esta semana:</strong> '+
-          recs.map(r=>`<span style="display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;background:var(--success-bg);border:1px solid var(--success-border);border-radius:4px;color:var(--success)">+${fmt(r.monto)} — ${r.motivo} (${fmtFH(r.fechaHora)})</span>`).join('')+'</div>';
-      } else {
-        hrEl.innerHTML='';
-      }
-    } else {
-      hrEl.innerHTML='';
-    }
-  }
-
   // ── SEMANAL ──
   document.getElementById('m-cant-semanas').textContent=semanas.length;
+  // Métricas de semana activa
   if(sem){
-    // Contado de la semana
-    const cont = boletas.filter(b=>b.semanaId===sem.id&&b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
-    // Cta cte PAGADA en esta semana (por semanaIdPago)
-    const ctePagSem = boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id).reduce((a,b)=>a+b.monto,0);
-    const recargasActSem = recargas.filter(r=>r.semanaId===sem.id).reduce((a,r)=>a+r.monto,0);
-    document.getElementById('m-sem-fondo-act').textContent = fmt(sem.fondo+recargasActSem);
-    document.getElementById('m-sem-eg').textContent        = fmt(cont);
-    document.getElementById('m-sem-cte-pag').textContent   = fmt(ctePagSem);
+    const contSemAct = boletas.filter(b=>b.semanaId===sem.id&&b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
+    const ctePagSemAct = boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id).reduce((a,b)=>a+b.monto,0);
+    const ingSemAct = cajas.filter(cj=>cj.fecha>=sem.inicio&&cj.fecha<=(sem.fin||hoy())).reduce((a,cj)=>a+(cj.total||0),0);
+    document.getElementById('m-sem-eg').textContent       = fmt(contSemAct+ctePagSemAct);
+    document.getElementById('m-sem-ingresos').textContent = fmt(ingSemAct);
+    document.getElementById('m-sem-cte-pag').textContent  = fmt(ctePagSemAct);
+    document.getElementById('sem-activa-info').textContent= `Semana ${sem.num} activa desde ${fmtF(sem.inicio)}`;
   } else {
-    ['m-sem-fondo-act','m-sem-eg','m-sem-cte-pag'].forEach(id=>document.getElementById(id).textContent='$0');
+    ['m-sem-eg','m-sem-ingresos','m-sem-cte-pag'].forEach(id=>document.getElementById(id).textContent='$0');
+    document.getElementById('sem-activa-info').textContent='Sin semana activa';
   }
-  const tbS=document.getElementById('tbl-semanas');
-  if(!semanas.length) tbS.innerHTML='<tr class="empty-row"><td colspan="9">Sin semanas registradas</td></tr>';
-  else tbS.innerHTML=[...semanas].reverse().map(s=>{
-    const recargasSemHist = recargas.filter(r=>r.semanaId===s.id).reduce((a,r)=>a+r.monto,0);
-    const fondoReal = s.fondo + recargasSemHist;
-    const cont     = boletas.filter(b=>b.semanaId===s.id&&b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
-    const ctePag   = boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===s.id).reduce((a,b)=>a+b.monto,0);
-    const total    = cont+ctePag;
-    const saldo    = fondoReal-total;
-    return `<tr>
-      <td><strong>Sem. ${s.num}</strong></td>
-      <td>${fmtF(s.inicio)}</td><td>${fmtF(s.fin)}</td>
-      <td>${fmt(fondoReal)}${recargasSemHist>0?` <span style="font-size:10px;color:var(--success)">(+${fmt(recargasSemHist)})</span>`:''}</td>
-      <td>${fmt(cont)}</td><td>${fmt(ctePag)}</td>
-      <td><strong>${fmt(total)}</strong></td>
-      <td class="${saldo<0?'red':'green'}" style="font-weight:600">${fmt(saldo)}</td>
-      <td><span class="badge ${s.cerrada?'cerrada':'activa'}">${s.cerrada?'Cerrada':'Activa'}</span></td>
-    </tr>`;
-  }).join('');
+
+  // Acordeón por semana
+  const listaSemanas = document.getElementById('lista-semanas');
+  if(!semanas.length){
+    listaSemanas.innerHTML='<div style="text-align:center;color:var(--text3);padding:2rem;font-size:13px;font-style:italic">Sin semanas registradas. Usá el botón "Nueva semana" para iniciar.</div>';
+  } else {
+    listaSemanas.innerHTML=[...semanas].reverse().map(s=>{
+      const cont    = boletas.filter(b=>b.semanaId===s.id&&b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
+      const ctePag  = boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===s.id).reduce((a,b)=>a+b.monto,0);
+      const egTotal = cont+ctePag;
+      const ingSem  = cajas.filter(cj=>cj.fecha>=s.inicio&&cj.fecha<=(s.fin||hoy())).reduce((a,cj)=>a+(cj.total||0),0);
+      const balance = ingSem - egTotal;
+      const balColor = balance>=0?'var(--success)':'var(--danger)';
+
+      // Por medio de pago
+      const efec  = boletas.filter(b=>b.semanaId===s.id&&b.tipo==='contado'&&b.medio==='Efectivo').reduce((a,b)=>a+b.monto,0)
+                  + boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===s.id&&b.medioPagoCte==='Efectivo').reduce((a,b)=>a+b.monto,0);
+      const transf= boletas.filter(b=>b.semanaId===s.id&&b.tipo==='contado'&&b.medio==='Transferencia').reduce((a,b)=>a+b.monto,0)
+                  + boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===s.id&&b.medioPagoCte==='Transferencia').reduce((a,b)=>a+b.monto,0);
+      const tarj  = boletas.filter(b=>b.semanaId===s.id&&b.tipo==='contado'&&b.medio==='Tarjeta').reduce((a,b)=>a+b.monto,0)
+                  + boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===s.id&&b.medioPagoCte==='Tarjeta').reduce((a,b)=>a+b.monto,0);
+
+      const uid = 'sem-body-'+s.id;
+      const chid = 'sem-chev-'+s.id;
+      return `<div class="mes-card">
+        <div class="mes-header" onclick="toggleMes('${uid}','${chid}')">
+          <div class="mes-header-left">
+            <div class="mes-num" style="background:${s.cerrada?'var(--text3)':'var(--accent)'}">${s.num}</div>
+            <div>
+              <div class="mes-titulo">Semana ${s.num}</div>
+              <div class="mes-subtitulo">${fmtF(s.inicio)} → ${s.fin?fmtF(s.fin):'En curso'}</div>
+            </div>
+          </div>
+          <div class="mes-header-right">
+            <div style="text-align:right">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Balance</div>
+              <div style="font-size:16px;font-weight:700;color:${balColor}">${balance>=0?'+':''}${fmt(balance)}</div>
+            </div>
+            <span class="badge ${s.cerrada?'cerrada':'activa'}">${s.cerrada?'Cerrada':'Activa'}</span>
+            <span class="mes-chevron" id="${chid}">▼</span>
+          </div>
+        </div>
+        <div class="mes-body" id="${uid}">
+          <div class="mes-semanas" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+            <div class="mes-sem-card">
+              <div class="mes-sem-titulo">📥 Ingresos</div>
+              <div class="mes-sem-fila"><span>Total cajas</span><strong style="color:var(--success)">${fmt(ingSem)}</strong></div>
+            </div>
+            <div class="mes-sem-card">
+              <div class="mes-sem-titulo">📤 Egresos</div>
+              <div class="mes-sem-fila"><span>Contado</span><span>${fmt(cont)}</span></div>
+              <div class="mes-sem-fila"><span>Cta. Cte. pag.</span><span>${fmt(ctePag)}</span></div>
+              <div class="mes-sem-fila" style="border-top:1px solid var(--border);margin-top:3px;padding-top:3px"><span>Total</span><strong style="color:var(--danger)">${fmt(egTotal)}</strong></div>
+            </div>
+            <div class="mes-sem-card">
+              <div class="mes-sem-titulo">💳 Por medio</div>
+              <div class="mes-sem-fila"><span>💵 Efectivo</span><span>${fmt(efec)}</span></div>
+              <div class="mes-sem-fila"><span>🏦 Transf.</span><span>${fmt(transf)}</span></div>
+              <div class="mes-sem-fila"><span>💳 Tarjeta</span><span>${fmt(tarj)}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   // ── MENSUAL ──
   const mesActivo = meses.find(m=>!m.cerrado);
   document.getElementById('m-cant-meses').textContent=meses.length;
   if(mesActivo){
     const fin0 = mesActivo.fin||hoy();
-    const cont0 = boletas.filter(b=>b.tipo==='contado'&&b.fecha>=mesActivo.inicio&&b.fecha<=fin0).reduce((a,b)=>a+b.monto,0);
-    const ctePag0 = boletas.filter(b=>b.tipo==='cte'&&b.pagadaCte&&b.fechaPagoCte>=mesActivo.inicio&&b.fechaPagoCte<=fin0).reduce((a,b)=>a+b.monto,0);
-    document.getElementById('m-mes-eg').textContent   =fmt(cont0);
-    document.getElementById('m-mes-cte').textContent  =fmt(ctePag0);
-    document.getElementById('m-mes-total').textContent=fmt(cont0+ctePag0);
+    const eg0  = boletas.filter(b=>b.tipo==='contado'&&b.fecha>=mesActivo.inicio&&b.fecha<=fin0).reduce((a,b)=>a+b.monto,0)
+               + boletas.filter(b=>b.tipo==='cte'&&b.pagadaCte&&b.fechaPagoCte>=mesActivo.inicio&&b.fechaPagoCte<=fin0).reduce((a,b)=>a+b.monto,0);
+    const ing0 = cajas.filter(cj=>cj.fecha>=mesActivo.inicio&&cj.fecha<=fin0).reduce((a,cj)=>a+(cj.total||0),0);
+    const bal0 = ing0-eg0;
+    document.getElementById('m-mes-eg').textContent      = fmt(eg0);
+    document.getElementById('m-mes-ingresos').textContent= fmt(ing0);
+    const balEl = document.getElementById('m-mes-balance');
+    balEl.textContent = (bal0>=0?'+':'')+fmt(bal0);
+    balEl.className   = 'metric-value '+(bal0>=0?'green':'red');
   } else {
-    ['m-mes-eg','m-mes-cte','m-mes-total'].forEach(id=>document.getElementById(id).textContent='$0');
+    document.getElementById('m-mes-eg').textContent='$0';
+    document.getElementById('m-mes-ingresos').textContent='$0';
+    document.getElementById('m-mes-balance').textContent='$0';
+    document.getElementById('m-mes-balance').className='metric-value';
   }
 
   // Acordeón de meses
@@ -1131,6 +1236,9 @@ function render(){
       const cont   = bMes.reduce((a,b)=>a+b.monto,0);
       const ctePag = cteMes.reduce((a,b)=>a+b.monto,0);
       const total  = cont+ctePag;
+      // Ingresos del mes (cajas)
+      const ingresosMes = cajas.filter(cj=>cj.fecha>=m.inicio&&cj.fecha<=fin).reduce((a,cj)=>a+(cj.total||0),0);
+      const balanceMes  = ingresosMes - total;
 
       // Semanas del mes
       const semMes = semanas.filter(s=>s.inicio>=m.inicio&&s.inicio<=fin);
@@ -1185,19 +1293,30 @@ function render(){
             </div>
           </div>
           <div class="mes-header-right">
-            <div>
-              <div style="font-size:11px;color:var(--text3);text-align:right">Total egresado</div>
-              <div class="mes-total">${fmt(total)}</div>
+            <div style="text-align:right">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Balance</div>
+              <div style="font-size:16px;font-weight:700;color:${balanceMes>=0?'var(--success)':'var(--danger)'}">${balanceMes>=0?'+':''}${fmt(balanceMes)}</div>
             </div>
             <span class="badge ${m.cerrado?'cerrada':'activa'}">${m.cerrado?'Cerrado':'Activo'}</span>
             <span class="mes-chevron" id="chevron-${mesNum}">▼</span>
           </div>
         </div>
         <div class="mes-body" id="mes-body-${mesNum}">
-          <div style="display:flex;gap:1rem;margin-bottom:.75rem;flex-wrap:wrap">
-            <span style="font-size:13px">💵 Contado: <strong>${fmt(cont)}</strong></span>
-            <span style="font-size:13px">🏦 Cta. Cte.: <strong>${fmt(ctePag)}</strong></span>
-            <span style="font-size:13px">📊 Total: <strong>${fmt(total)}</strong></span>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:.85rem">
+            <div class="mes-sem-card">
+              <div class="mes-sem-titulo">📥 Ingresos</div>
+              <div class="mes-sem-fila"><span>Total cajas</span><strong style="color:var(--success)">${fmt(ingresosMes)}</strong></div>
+            </div>
+            <div class="mes-sem-card">
+              <div class="mes-sem-titulo">📤 Egresos</div>
+              <div class="mes-sem-fila"><span>Contado</span><span>${fmt(cont)}</span></div>
+              <div class="mes-sem-fila"><span>Cta. Cte.</span><span>${fmt(ctePag)}</span></div>
+              <div class="mes-sem-fila" style="border-top:1px solid var(--border);margin-top:3px;padding-top:3px"><span>Total</span><strong style="color:var(--danger)">${fmt(total)}</strong></div>
+            </div>
+            <div class="mes-sem-card">
+              <div class="mes-sem-titulo">⚖️ Balance</div>
+              <div class="mes-sem-fila"><span style="font-weight:600;color:${balanceMes>=0?'var(--success)':'var(--danger)'}">${balanceMes>=0?'✓ Positivo':'✗ Negativo'}</span><strong style="color:${balanceMes>=0?'var(--success)':'var(--danger)'}">${balanceMes>=0?'+':''}${fmt(balanceMes)}</strong></div>
+            </div>
           </div>
           <div class="mes-semanas">${semCardsHTML}</div>
           <button class="ver-mas-btn" onclick="toggleDetalle('detalle-${mesNum}',this)">▶ Ver detalle por categoría y empresa</button>
@@ -1248,7 +1367,6 @@ function render(){
       </div></td>
     </tr>`;
   }).join('');
-}
 
 function renderEmpresas(){
   const sel=document.getElementById('inp-empresa');
@@ -1340,6 +1458,19 @@ window.exportarExcel = function(){
   ws4['!cols']=[{wch:20},{wch:10},{wch:16},{wch:16},{wch:16}];
   XLSX.utils.book_append_sheet(wb,ws4,'Por categoría');
 
+  // Hoja 5: Cajas
+  const caj5=[['Fecha','Cajera','Hora inicio','Hora cierre','Efectivo','PY Débito','PY Efectivo','Mercado Pago','Tarjeta','Total','Diferencia tipo','Diferencia $','Comentario']];
+  [...cajas].sort((a,b)=>a.fecha>b.fecha?1:-1).forEach(cj=>{
+    caj5.push([
+      cj.fecha, cj.cajera, cj.horaInicio||'', cj.horaCierre||'',
+      cj.efectivo||0, cj.pyDebito||0, cj.pyEfectivo||0, cj.mercadoPago||0,
+      cj.tarjeta||0, cj.total||0, cj.difTipo||'ninguna', cj.diferencia||0, cj.comentario||''
+    ]);
+  });
+  const ws5=XLSX.utils.aoa_to_sheet(caj5);
+  ws5['!cols']=[{wch:12},{wch:18},{wch:11},{wch:11},{wch:12},{wch:12},{wch:14},{wch:14},{wch:12},{wch:12},{wch:15},{wch:13},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws5,'Cajas');
+
   const fecha=new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
   XLSX.writeFile(wb,`boletas_${fecha}.xlsx`);
 };
@@ -1361,5 +1492,4 @@ window.toggleDetalle = function(detalleId, btn){
 };
 </script>
 </body>
-
 </html>
