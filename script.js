@@ -338,8 +338,9 @@ window.renderCajas = function(){
   });
 
   // Resumen del día filtrado
-  const totalEfec    = cajasVistas.reduce((a,b)=>a+(b.efectivo||0)+(b.pyEfectivo||0),0);
-  const totalPY      = cajasVistas.reduce((a,b)=>a+(b.pyDebito||0)+(b.pyEfectivo||0),0);
+  const totalEfec    = cajasVistas.reduce((a,b)=>a+(b.efectivo||0),0);
+  const totalPYDebito = cajasVistas.reduce((a,b)=>a+(b.pyDebito||0),0);
+  const totalPYEfectivo = cajasVistas.reduce((a,b)=>a+(b.pyEfectivo||0),0);
   const totalMP      = cajasVistas.reduce((a,b)=>a+(b.mercadoPago||0),0);
   const totalTarjeta = cajasVistas.reduce((a,b)=>a+(b.tarjeta||0),0);
   const totalGen     = cajasVistas.reduce((a,b)=>a+(b.total||0),0);
@@ -348,7 +349,8 @@ window.renderCajas = function(){
   const setM = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
   setM('mc-cantidad', cajasVistas.length);
   setM('mc-efectivo', fmt(totalEfec));
-  setM('mc-py',       fmt(totalPY));
+  setM('mc-py-debito', fmt(totalPYDebito));
+  setM('mc-py-efectivo', fmt(totalPYEfectivo));
   setM('mc-mp',       fmt(totalMP));
   setM('mc-tarjeta',  fmt(totalTarjeta));
   setM('mc-total',    fmt(totalGen));
