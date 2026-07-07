@@ -81,7 +81,15 @@ function iniciarListeners(){
 function fmt(n){ return '$'+Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtF(s){ return s ? new Date(s+'T12:00:00').toLocaleDateString('es-AR') : '—'; }
 function fmtFH(iso){ return iso ? new Date(iso).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'; }
-function hoy(){ return new Date().toISOString().split('T')[0]; }
+function hoy() {
+    const d = new Date();
+
+    const año = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, "0");
+    const dia = String(d.getDate()).padStart(2, "0");
+
+    return `${año}-${mes}-${dia}`;
+}
 function semanaActiva(){ return semanas.find(s=>!s.cerrada)||null; }
 
 // Determina a qué semana pertenece un pago de cta cte (por fecha de pago)
@@ -467,15 +475,15 @@ function render(){
   const ctePagSemEf = sem?boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id&&b.medioPagoCte==='Efectivo').reduce((a,b)=>a+b.monto,0):0;
   const ctePagSemTr = sem?boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id&&b.medioPagoCte==='Transferencia').reduce((a,b)=>a+b.monto,0):0;
   const ctePagSemTj = sem?boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id&&b.medioPagoCte==='Tarjeta').reduce((a,b)=>a+b.monto,0):0;
-  // Ingresos del día (cajas de hoy)
-  const ingresosHoy = cajas.filter(cj=>cj.fecha===h).reduce((a,cj)=>a+(cj.total||0),0);
-
+  // Ingresos de la semana (cajas de la semana)
+  const ingresosSemana = cajas.filter(cj=>cj.semanaId===sem?.id).reduce((a,cj)=>a+(cj.total||0),0);
+  // const ingresosHoy = cajas.reduce((a,cj)=>a+(cj.total||0),0);
   document.getElementById('m-gastado-sem').textContent  = fmt(gastadoContado);
   document.getElementById('m-tot-efectivo').textContent = fmt(totEfectivo+ctePagSemEf);
   document.getElementById('m-tot-transf').textContent   = fmt(totTransf+ctePagSemTr);
   document.getElementById('m-tot-tarjeta').textContent  = fmt(totTarjeta+ctePagSemTj);
   document.getElementById('m-cte-pend-sem').textContent = fmt(ctePendMonto);
-  document.getElementById('m-tot-ingresos').textContent = fmt(ingresosHoy);
+  document.getElementById('m-tot-ingresos').textContent = fmt(ingresosSemana);
 
     // Tabla: boletas de la semana actual + cta cte pendientes de semanas anteriores
     const ctePendAnteriores = boletas.filter(b=>b.tipo==='cte'&&!b.pagadaCte&&(!sem || b.semanaId!==sem.id));
@@ -489,7 +497,7 @@ function render(){
     const tbB=document.getElementById('tbl-boletas');
     if(!todasVisibles.length) tbB.innerHTML='<tr class="empty-row"><td colspan="10">Sin boletas esta semana</td></tr>';
     else tbB.innerHTML=todasVisibles.map(b=>{
-      const esPendAnterior = b.tipo==='cte'&&!b.pagadaCte&&b.semanaId!==sem.id;
+      const esPendAnterior = b.tipo==='cte'&&!b.pagadaCte&&(!sem || b.semanaId!==sem.id);
       const medioTexto = b.tipo==='cte'
         ? (b.pagadaCte?(b.medioPagoCte==='Transferencia'?'🏦 Transf.':'💵 Efectivo'):'—')
         : (b.medio==='Transferencia'?'🏦 Transf.':'💵 Efectivo');
