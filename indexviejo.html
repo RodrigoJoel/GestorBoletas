@@ -116,6 +116,10 @@
                 <input type="text" id="inp-prov" placeholder="Ej: Compra mercadería">
               </div>
               <div class="field">
+                <label>Fecha de boleta</label>
+                <input type="date" id="inp-fecha-boleta">
+              </div>
+              <div class="field">
                 <label>Empresa</label>
                 <select id="inp-empresa"></select>
               </div>
@@ -289,7 +293,7 @@
           <div class="metric"><div class="metric-label">PedidosYa Efectivo</div><div class="metric-value" id="mc-py-efectivo">$0</div></div>
           <div class="metric"><div class="metric-label">Mercado Pago</div><div class="metric-value" id="mc-mp">$0</div></div>
           <div class="metric"><div class="metric-label">Tarjeta Déb./Cré.</div><div class="metric-value" id="mc-tarjeta">$0</div></div>
-          <div class="metric"><div class="metric-label">Total del día</div><div class="metric-value" id="mc-total">$0</div></div>
+          <div class="metric"><div class="metric-label">Total</div><div class="metric-value" id="mc-total">$0</div></div>
           <div class="metric"><div class="metric-label">Diferencia acumulada</div><div class="metric-value" id="mc-dif">$0</div></div>
         </div>
 
@@ -302,8 +306,12 @@
               <input type="text" id="cj-cajera" placeholder="Nombre de la cajera">
             </div>
             <div class="field">
-              <label>Fecha</label>
+              <label>Fecha apertura</label>
               <input type="date" id="cj-fecha">
+            </div>
+            <div class="field">
+              <label>Fecha cierre</label>
+              <input type="date" id="cj-fecha-cierre">
             </div>
             <div class="field">
               <label>Hora inicio</label>
@@ -363,10 +371,14 @@
 
         <!-- Filtros -->
         <div class="filtro-cajas">
-          <label style="font-size:12px;font-weight:500;color:var(--text2)">Filtrar:</label>
-          <input type="date" id="filtro-caja-fecha" onchange="renderCajas()">
-          <input type="text" id="filtro-caja-cajera" placeholder="Cajera..." onkeyup="renderCajas()" style="width:140px">
-          <button class="btn-sm" onclick="document.getElementById('filtro-caja-fecha').value='';document.getElementById('filtro-caja-cajera').value='';renderCajas()">Limpiar</button>
+          <label style="font-size:12px;font-weight:500;color:var(--text2)">Mostrar:</label>
+          <select id="filtro-caja-modo" onchange="renderCajas()" style="height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size:12px;background:var(--surface);color:var(--text)">
+            <option value="todas" selected>Todas las cajas</option>
+            <option value="dia">Por día</option>
+          </select>
+          <input type="date" id="filtro-caja-fecha" onchange="renderCajas()" style="display:none">
+          <input type="text" id="filtro-caja-cajera" placeholder="Cajera..." onkeyup="renderCajas()" style="width:140px;height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size:12px">
+          <button class="btn-sm" onclick="limpiarFiltrosCajas()">Limpiar</button>
         </div>
 
         <!-- Lista de cajas -->
@@ -426,6 +438,39 @@
     <div class="modal-actions">
       <button class="btn" onclick="cerrarModal()">Cancelar</button>
       <button class="btn primary" onclick="confirmarPago()">Confirmar pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar caja -->
+<div class="modal-overlay" id="modal-editar-caja">
+  <div class="modal" style="max-width:560px">
+    <h3>✏ Editar caja</h3>
+    <input type="hidden" id="edit-caja-id">
+    <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px">
+      <div class="field"><label>Cajera</label><input type="text" id="edit-cajera"></div>
+      <div class="field"><label>Fecha apertura</label><input type="date" id="edit-fecha"></div>
+      <div class="field"><label>Fecha cierre</label><input type="date" id="edit-fecha-cierre"></div>
+      <div class="field"><label>Hora inicio</label><input type="time" id="edit-hora-inicio"></div>
+      <div class="field"><label>Hora cierre</label><input type="time" id="edit-hora-cierre"></div>
+      <div class="field"><label>💵 Efectivo</label><input type="number" id="edit-efectivo" min="0" step="0.01"></div>
+      <div class="field"><label>🛵 PY Débito</label><input type="number" id="edit-py-debito" min="0" step="0.01"></div>
+      <div class="field"><label>🛵 PY Efectivo</label><input type="number" id="edit-py-efectivo" min="0" step="0.01"></div>
+      <div class="field"><label>💙 Mercado Pago</label><input type="number" id="edit-mp" min="0" step="0.01"></div>
+      <div class="field"><label>💳 Tarjeta</label><input type="number" id="edit-tarjeta" min="0" step="0.01"></div>
+      <div class="field"><label>Diferencia</label>
+        <select id="edit-dif-tipo">
+          <option value="ninguna">Sin diferencia</option>
+          <option value="falta">Falta dinero</option>
+          <option value="sobra">Sobra dinero</option>
+        </select>
+      </div>
+      <div class="field"><label>Monto dif. ($)</label><input type="number" id="edit-dif-monto" min="0" step="0.01"></div>
+      <div class="field" style="grid-column:1/-1"><label>Comentarios</label><input type="text" id="edit-comentario"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="cerrarModalEditarCaja()">Cancelar</button>
+      <button class="btn primary" onclick="guardarEdicionCaja()">Guardar cambios</button>
     </div>
   </div>
 </div>

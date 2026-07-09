@@ -128,13 +128,15 @@ window.agregarBoleta = async function(){
   const tipo   = document.getElementById('inp-tipo').value;
   const medio  = tipo==='contado'?document.getElementById('inp-medio').value:null;
   const fechaCte = document.getElementById('inp-fecha-cte').value;
+  // Fecha manual de la boleta: si se llenó se usa, sino fecha de hoy
+  const fechaBoleta = (document.getElementById('inp-fecha-boleta')||{value:''}).value || hoy();
   if(!prov)  { alert('Ingresá el concepto'); return; }
   if(!empresa){ alert('Seleccioná una empresa'); return; }
   if(!monto)  { alert('Ingresá un monto válido'); return; }
   if(tipo==='cte'&&!fechaCte){ alert('Ingresá la fecha de vencimiento'); return; }
   const ahora = new Date().toISOString();
   await addDoc(collection(db,'boletas'),{
-    fecha: hoy(), fechaHora: ahora,
+    fecha: fechaBoleta, fechaHora: ahora,
     semanaId: sem?sem.id:null, semanaNum: sem?sem.num:null,
     proveedor: prov, empresa, categoria: cat,
     monto, tipo, medio: medio||null,
@@ -145,6 +147,7 @@ window.agregarBoleta = async function(){
   document.getElementById('inp-prov').value='';
   document.getElementById('inp-monto').value='';
   document.getElementById('inp-fecha-cte').value='';
+  document.getElementById('inp-fecha-boleta').value='';
   document.getElementById('inp-tipo').value='contado';
   document.getElementById('field-fecha-cte').style.display='none';
   document.getElementById('field-medio-pago').style.display='block';
@@ -266,9 +269,10 @@ window.cerrarMes = async function(){
 
 // ── CAJAS ──
 window.guardarCaja = async function(){
-  const cajera   = document.getElementById('cj-cajera').value.trim();
-  const fecha    = document.getElementById('cj-fecha').value;
-  const hInicio  = document.getElementById('cj-hora-inicio').value;
+  const cajera      = document.getElementById('cj-cajera').value.trim();
+  const fecha       = document.getElementById('cj-fecha').value;
+  const fechaCierre = (document.getElementById('cj-fecha-cierre')||{value:null}).value||null;
+  const hInicio     = document.getElementById('cj-hora-inicio').value;
   const hCierre  = document.getElementById('cj-hora-cierre').value;
   const efectivo = parseFloat(document.getElementById('cj-efectivo').value)||0;
   const pyDeb    = parseFloat(document.getElementById('cj-py-debito').value)||0;
@@ -286,7 +290,8 @@ window.guardarCaja = async function(){
   const diferencia = difTipo==='falta' ? -difMonto : difTipo==='sobra' ? difMonto : 0;
 
   await addDoc(collection(db,'cajas'),{
-    cajera, fecha, horaInicio: hInicio||null, horaCierre: hCierre||null,
+    cajera, fecha, fechaCierre,
+    horaInicio: hInicio||null, horaCierre: hCierre||null,
     efectivo, pyDebito: pyDeb, pyEfectivo: pyEfec, mercadoPago: mp, tarjeta,
     total, difTipo, difMonto, diferencia,
     comentario: comentario||null,
@@ -294,7 +299,7 @@ window.guardarCaja = async function(){
   });
 
   // Limpiar form
-  ['cj-cajera','cj-hora-inicio','cj-hora-cierre','cj-efectivo',
+  ['cj-cajera','cj-fecha-cierre','cj-hora-inicio','cj-hora-cierre','cj-efectivo',
    'cj-py-debito','cj-py-efectivo','cj-mp','cj-tarjeta','cj-dif-monto','cj-comentario'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.value='';
@@ -314,9 +319,27 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
   const fechaEl = document.getElementById('cj-fecha');
   if(fechaEl) fechaEl.value = hoy();
+  // Fecha boleta se deja vacía (opcional — si no se llena usa hoy)
+  // Filtro cajas: iniciar en modo "todas", sin fecha prefijada
+  const modoEl = document.getElementById('filtro-caja-modo');
+  if(modoEl) {
+    modoEl.value = 'todas';
+    modoEl.addEventListener('change', renderCajas);
+  }
   const fechaFiltro = document.getElementById('filtro-caja-fecha');
   if(fechaFiltro) fechaFiltro.value = hoy();
 });
+
+// ── LIMPIAR FILTROS CAJAS ──
+window.limpiarFiltrosCajas = function(){
+  const modoEl = document.getElementById('filtro-caja-modo');
+  if(modoEl) modoEl.value = 'todas';
+  const fechaEl = document.getElementById('filtro-caja-fecha');
+  if(fechaEl) { fechaEl.value = hoy(); fechaEl.style.display='none'; }
+  const cajeraEl = document.getElementById('filtro-caja-cajera');
+  if(cajeraEl) cajeraEl.value = '';
+  renderCajas();
+};
 
 window.eliminarCaja = async function(id){
   if(!confirm('¿Eliminar esta caja?')) return;
@@ -332,15 +355,20 @@ window.toggleCajaBody = function(id, chevId){
 };
 
 window.renderCajas = function(){
-  const fechaFiltro  = (document.getElementById('filtro-caja-fecha')||{}).value || hoy();
-  const cajeraFiltro = ((document.getElementById('filtro-caja-cajera')||{}).value||'').toLowerCase();
+  const modoEl = document.getElementById('filtro-caja-modo');
+  const modo = modoEl ? modoEl.value : 'todas';
+  const fechaEl = document.getElementById('filtro-caja-fecha');
+  // Mostrar/ocultar campo fecha según modo
+  if(fechaEl) fechaEl.style.display = modo==='dia' ? 'inline-block' : 'none';
+  const fechaFiltro  = modo==='dia' ? ((fechaEl||{}).value || hoy()) : '';
+  const cajeraFiltro = ((document.getElementById('filtro-caja-cajera')||{}).value||'').toLowerCase().trim();
 
-  // Badge fecha
+  // Badge resumen
   const badge = document.getElementById('fecha-cajas-badge');
-  if(badge) badge.textContent = fmtF(fechaFiltro);
+  if(badge) badge.textContent = modo==='dia' ? fmtF(fechaFiltro) : 'Todas las cajas';
 
   let cajasVistas = cajas.filter(cj=>{
-    const okFecha   = !fechaFiltro  || cj.fecha===fechaFiltro;
+    const okFecha   = !fechaFiltro || cj.fecha===fechaFiltro;
     const okCajera  = !cajeraFiltro || cj.cajera.toLowerCase().includes(cajeraFiltro);
     return okFecha && okCajera;
   });
@@ -391,7 +419,7 @@ window.renderCajas = function(){
         <div class="caja-avatar">${inicial}</div>
         <div class="caja-info-main">
           <div class="caja-cajera">${cj.cajera}</div>
-          <div class="caja-meta">${fmtF(cj.fecha)} &nbsp;·&nbsp; ${horario}</div>
+          <div class="caja-meta">${fmtF(cj.fecha)}${cj.fechaCierre&&cj.fechaCierre!==cj.fecha?' → '+fmtF(cj.fechaCierre):''} &nbsp;·&nbsp; ${horario}</div>
         </div>
         <div class="caja-total-wrap">
           <div class="caja-total-label">Total</div>
@@ -422,15 +450,70 @@ window.renderCajas = function(){
             <div class="medio-val">${fmt(cj.tarjeta||0)}</div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:.5rem">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:.5rem">
           ${difHtml}
-          <button class="icon-btn danger" onclick="eliminarCaja('${cj.id}')" title="Eliminar caja">✕</button>
+          <button class="btn-sm" onclick="abrirEditarCaja('${cj.id}')">✏ Editar</button>
+          <button class="icon-btn danger" onclick="eliminarCaja('${cj.id}')" title="Eliminar">✕</button>
         </div>
         ${cj.comentario?`<div class="caja-comentario">💬 ${cj.comentario}</div>`:''}
       </div>
     </div>`;
   }).join('');
 };
+
+
+// ── EDITAR CAJA ──
+window.abrirEditarCaja = function(id){
+  const cj = cajas.find(c=>c.id===id);
+  if(!cj) return;
+  document.getElementById('edit-caja-id').value        = id;
+  document.getElementById('edit-cajera').value         = cj.cajera||'';
+  document.getElementById('edit-fecha').value          = cj.fecha||'';
+  document.getElementById('edit-fecha-cierre').value   = cj.fechaCierre||'';
+  document.getElementById('edit-hora-inicio').value    = cj.horaInicio||'';
+  document.getElementById('edit-hora-cierre').value    = cj.horaCierre||'';
+  document.getElementById('edit-efectivo').value       = cj.efectivo||0;
+  document.getElementById('edit-py-debito').value      = cj.pyDebito||0;
+  document.getElementById('edit-py-efectivo').value    = cj.pyEfectivo||0;
+  document.getElementById('edit-mp').value             = cj.mercadoPago||0;
+  document.getElementById('edit-tarjeta').value        = cj.tarjeta||0;
+  document.getElementById('edit-dif-tipo').value       = cj.difTipo||'ninguna';
+  document.getElementById('edit-dif-monto').value      = cj.difMonto||0;
+  document.getElementById('edit-comentario').value     = cj.comentario||'';
+  document.getElementById('modal-editar-caja').classList.add('open');
+};
+
+window.cerrarModalEditarCaja = function(){
+  document.getElementById('modal-editar-caja').classList.remove('open');
+};
+
+window.guardarEdicionCaja = async function(){
+  const id          = document.getElementById('edit-caja-id').value;
+  const cajera      = document.getElementById('edit-cajera').value.trim();
+  const fecha       = document.getElementById('edit-fecha').value;
+  const fechaCierre = document.getElementById('edit-fecha-cierre').value||null;
+  const hInicio     = document.getElementById('edit-hora-inicio').value;
+  const hCierre     = document.getElementById('edit-hora-cierre').value;
+  const efectivo    = parseFloat(document.getElementById('edit-efectivo').value)||0;
+  const pyDeb       = parseFloat(document.getElementById('edit-py-debito').value)||0;
+  const pyEfec      = parseFloat(document.getElementById('edit-py-efectivo').value)||0;
+  const mp          = parseFloat(document.getElementById('edit-mp').value)||0;
+  const tarjeta     = parseFloat(document.getElementById('edit-tarjeta').value)||0;
+  const difTipo     = document.getElementById('edit-dif-tipo').value;
+  const difMonto    = parseFloat(document.getElementById('edit-dif-monto').value)||0;
+  const diferencia  = difTipo==='falta'?-difMonto:difTipo==='sobra'?difMonto:0;
+  const total       = efectivo+pyDeb+pyEfec+mp+tarjeta;
+  const comentario  = document.getElementById('edit-comentario').value.trim()||null;
+  if(!cajera){ alert('Ingresá el nombre de la cajera'); return; }
+  await updateDoc(doc(db,'cajas',id),{
+    cajera, fecha, fechaCierre,
+    horaInicio: hInicio||null, horaCierre: hCierre||null,
+    efectivo, pyDebito:pyDeb, pyEfectivo:pyEfec, mercadoPago:mp, tarjeta,
+    total, difTipo, difMonto, diferencia, comentario
+  });
+  cerrarModalEditarCaja();
+};
+
 
 // ── EMPRESAS ──
 window.agregarEmpresa = async function(){

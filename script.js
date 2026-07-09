@@ -515,6 +515,176 @@ window.guardarEdicionCaja = async function(){
 };
 
 
+// ── HISTORIAL DE GASTOS ──
+window.renderHistorial = function(){
+  const buscar = (document.getElementById('hist-buscar')||{value:''}).value.toLowerCase().trim();
+  const tipoFiltro = (document.getElementById('hist-tipo')||{value:''}).value;
+
+  let bFiltradas = [...boletas];
+  if(buscar) bFiltradas = bFiltradas.filter(b=>
+    (b.proveedor||'').toLowerCase().includes(buscar) ||
+    (b.empresa||'').toLowerCase().includes(buscar)
+  );
+  if(tipoFiltro) bFiltradas = bFiltradas.filter(b=>b.tipo===tipoFiltro);
+
+  // Métricas globales del filtro
+  const totCont = bFiltradas.filter(b=>b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
+  const totCte  = bFiltradas.filter(b=>b.tipo==='cte').reduce((a,b)=>a+b.monto,0);
+  const setM = (id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  setM('hist-total-n',    bFiltradas.length);
+  setM('hist-total-cont', fmt(totCont));
+  setM('hist-total-cte',  fmt(totCte));
+  setM('hist-total-gen',  fmt(totCont+totCte));
+
+  const lista = document.getElementById('lista-historial');
+  if(!lista) return;
+  if(!bFiltradas.length){
+    lista.innerHTML='<div style="text-align:center;color:var(--text3);padding:2rem;font-style:italic;font-size:13px">Sin boletas que coincidan con el filtro.</div>';
+    return;
+  }
+
+  // Agrupar por semana (semanaNum) — sin semana va al grupo "Sin semana asignada"
+  const grupos = {};
+  bFiltradas.forEach(b=>{
+    const key = b.semanaId || '__sin_semana__';
+    if(!grupos[key]) grupos[key] = { semanaNum: b.semanaNum||null, semanaId: b.semanaId||null, boletas: [] };
+    grupos[key].boletas.push(b);
+  });
+
+  // Ordenar grupos: primero semanas (desc por num), luego sin semana
+  const gruposOrdenados = Object.values(grupos).sort((a,b)=>{
+    if(!a.semanaNum && !b.semanaNum) return 0;
+    if(!a.semanaNum) return 1;
+    if(!b.semanaNum) return -1;
+    return b.semanaNum - a.semanaNum;
+  });
+
+  lista.innerHTML = gruposOrdenados.map(g=>{
+    const sem = g.semanaId ? semanas.find(s=>s.id===g.semanaId) : null;
+    const titulo = sem ? `Semana ${sem.num}` : 'Sin semana asignada';
+    const subtitulo = sem ? `${fmtF(sem.inicio)} → ${sem.fin?fmtF(sem.fin):'En curso'}` : '';
+    const bOrdenadas = [...g.boletas].sort((a,b)=>((b.fechaHora||b.fecha)>(a.fechaHora||a.fecha)?1:-1));
+    const totGrupo = bOrdenadas.reduce((a,b)=>a+b.monto,0);
+    const uid = 'hist-body-'+(g.semanaId||'sin');
+    const chid = 'hist-chev-'+(g.semanaId||'sin');
+    const h = hoy();
+
+    const filas = bOrdenadas.map(b=>{
+      const medioTexto = b.tipo==='cte'
+        ? (b.pagadaCte ? (b.medioPagoCte==='Transferencia'?'🏦 Transf.':b.medioPagoCte==='Tarjeta'?'💳 Tarjeta':'💵 Efectivo') : '—')
+        : (b.medio==='Transferencia'?'🏦 Transf.':b.medio==='Tarjeta'?'💳 Tarjeta':'💵 Efectivo');
+      const venc = b.fechaCte && !b.pagadaCte && b.fechaCte < h;
+      const rowBg = venc ? 'background:var(--danger-bg)' : (b.tipo==='cte' && !b.pagadaCte ? 'background:var(--warning-bg)' : '');
+      const pagarBtn = (b.tipo==='cte' && !b.pagadaCte)
+        ? '<button class="btn-sm success" onclick="abrirModalPago(\'' + b.id + '\')">✓ Pagar</button>'
+        : '';
+      return '<tr style="' + rowBg + '">'
+        + '<td style="font-size:12px;color:var(--text3);white-space:nowrap">' + fmtFH(b.fechaHora) + '</td>'
+        + '<td style="font-size:11px;color:var(--text3)">' + fmtF(b.fecha) + '</td>'
+        + '<td><strong>' + (b.proveedor||'') + '</strong></td>'
+        + '<td>' + (b.empresa||'—') + '</td>'
+        + '<td>' + (b.categoria||'—') + '</td>'
+        + '<td><span class="badge ' + b.tipo + '">' + (b.tipo==='contado'?'Contado':'Cta. Cte.') + '</span></td>'
+        + '<td style="font-size:12px">' + medioTexto + '</td>'
+        + '<td><strong>' + fmt(b.monto) + '</strong></td>'
+        + '<td>' + (b.tipo==='contado' ? '<span class="badge contado">Pagada</span>' : (b.pagadaCte ? '<span class="badge pagada-cte">Pagada</span>' : '<span class="badge cte">Pendiente</span>')) + '</td>'
+        + '<td style="font-size:11px;color:var(--text3)">' + (b.fechaCte ? fmtF(b.fechaCte) : '—') + '</td>'
+        + '<td><div class="row-actions">'
+        + pagarBtn
+        + '<button class="btn-sm" onclick="abrirEditarBoleta(\'' + b.id + '\')">✏</button>'
+        + '<button class="icon-btn danger" onclick="eliminarBoleta(\'' + b.id + '\')">✕</button>'
+        + '</div></td>'
+        + '</tr>';
+    }).join('');
+
+    return `<div class="mes-card" style="margin-bottom:.75rem">
+      <div class="mes-header" onclick="toggleMes('${uid}','${chid}')">
+        <div class="mes-header-left">
+          <div class="mes-num" style="background:${sem&&sem.cerrada?'var(--text3)':'var(--accent)'}">${g.semanaNum||'—'}</div>
+          <div>
+            <div class="mes-titulo">${titulo}</div>
+            \${subtitulo?'<div class="mes-subtitulo">'+subtitulo+'</div>':''}
+          </div>
+        </div>
+        <div class="mes-header-right">
+          <div style="text-align:right">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Total egresado</div>
+            <div style="font-size:16px;font-weight:700;color:var(--danger)">${fmt(totGrupo)}</div>
+          </div>
+          <span class="badge ${sem?(sem.cerrada?'cerrada':'activa'):'cerrada'}">${bOrdenadas.length} boleta${bOrdenadas.length!==1?'s':''}</span>
+          <span class="mes-chevron" id="${chid}">▼</span>
+        </div>
+      </div>
+      <div class="mes-body" id="${uid}">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Cargada</th><th>Fecha boleta</th><th>Concepto</th><th>Empresa</th><th>Categoría</th><th>Tipo</th><th>Medio</th><th>Monto</th><th>Estado</th><th>Vencimiento</th><th></th></tr></thead>
+            <tbody>${filas}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+// ── EDITAR BOLETA ──
+window.abrirEditarBoleta = function(id){
+  const b = boletas.find(x=>x.id===id);
+  if(!b) return;
+  document.getElementById('edit-boleta-id').value    = id;
+  document.getElementById('edit-boleta-prov').value  = b.proveedor||'';
+  document.getElementById('edit-boleta-monto').value = b.monto||0;
+  document.getElementById('edit-boleta-fecha').value = b.fecha||hoy();
+  document.getElementById('edit-boleta-tipo').value  = b.tipo||'contado';
+  document.getElementById('edit-boleta-cat').value   = b.categoria||'';
+  document.getElementById('edit-boleta-fecha-cte').value = b.fechaCte||'';
+  // Poblar select empresa
+  const selEmp = document.getElementById('edit-boleta-empresa');
+  selEmp.innerHTML = '<option value="">— Seleccionar —</option>' +
+    empresas.map(e=>`<option value="${e.nombre}"${b.empresa===e.nombre?' selected':''}>${e.nombre}</option>`).join('');
+  // Medio
+  const selMed = document.getElementById('edit-boleta-medio');
+  selMed.value = b.medio||'Efectivo';
+  toggleEditMedio();
+  document.getElementById('modal-editar-boleta').classList.add('open');
+};
+
+window.cerrarModalEditarBoleta = function(){
+  document.getElementById('modal-editar-boleta').classList.remove('open');
+};
+
+window.toggleEditMedio = function(){
+  const tipo = (document.getElementById('edit-boleta-tipo')||{}).value;
+  const esCte = tipo==='cte';
+  const fMed = document.getElementById('edit-field-medio');
+  const fCte = document.getElementById('edit-field-fecha-cte');
+  if(fMed) fMed.style.display = esCte?'none':'block';
+  if(fCte) fCte.style.display = esCte?'block':'none';
+};
+
+window.guardarEdicionBoleta = async function(){
+  const id      = document.getElementById('edit-boleta-id').value;
+  const prov    = document.getElementById('edit-boleta-prov').value.trim();
+  const empresa = document.getElementById('edit-boleta-empresa').value;
+  const cat     = document.getElementById('edit-boleta-cat').value;
+  const monto   = parseFloat(document.getElementById('edit-boleta-monto').value)||0;
+  const fecha   = document.getElementById('edit-boleta-fecha').value||hoy();
+  const tipo    = document.getElementById('edit-boleta-tipo').value;
+  const medio   = tipo==='contado'?document.getElementById('edit-boleta-medio').value:null;
+  const fechaCte= tipo==='cte'?document.getElementById('edit-boleta-fecha-cte').value:null;
+  if(!prov)  { alert('Ingresá el concepto'); return; }
+  if(!empresa){ alert('Seleccioná una empresa'); return; }
+  if(!monto)  { alert('Ingresá un monto válido'); return; }
+  if(tipo==='cte'&&!fechaCte){ alert('Ingresá la fecha de vencimiento'); return; }
+  await updateDoc(doc(db,'boletas',id),{
+    proveedor:prov, empresa, categoria:cat,
+    monto, fecha, tipo, medio:medio||null,
+    fechaCte:fechaCte||null
+  });
+  cerrarModalEditarBoleta();
+};
+
+
 // ── EMPRESAS ──
 window.agregarEmpresa = async function(){
   const nombre = document.getElementById('inp-empresa-nueva').value.trim();
@@ -596,6 +766,7 @@ function render(){
         <td style="font-size:11px;color:var(--text3)">${esPendAnterior?'Vence: '+fmtF(b.fechaCte):''}</td>
         <td><div class="row-actions">
           ${b.tipo==='cte'&&!b.pagadaCte?`<button class="btn-sm success" onclick="abrirModalPago('${b.id}')">✓ Pagar</button>`:''}
+          <button class="btn-sm" onclick="abrirEditarBoleta('${b.id}')">✏</button>
           <button class="icon-btn danger" onclick="eliminarBoleta('${b.id}')">✕</button>
         </div></td>
       </tr>`;
@@ -817,6 +988,9 @@ function render(){
       </div>`;
     }).join('');
   }
+
+  // ── HISTORIAL ──
+  renderHistorial();
 
   // ── CTA CTE ──
   const ctes     = boletas.filter(b=>b.tipo==='cte');

@@ -46,6 +46,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
         Diario
       </div>
+      <div class="nav-item" onclick="showSection('historial',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Historial
+      </div>
       <div class="nav-item" onclick="showSection('semanal',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         Semanal
@@ -180,6 +184,29 @@
         </div>
       </div>
 
+      <!-- HISTORIAL DE GASTOS -->
+      <div id="sec-historial" class="section">
+        <div class="section-header">
+          <h2>Historial de gastos</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="text" id="hist-buscar" placeholder="Buscar concepto o empresa..." onkeyup="renderHistorial()" style="height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size:12px;width:220px">
+            <select id="hist-tipo" onchange="renderHistorial()" style="height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size:12px;background:var(--surface)">
+              <option value="">Todos los tipos</option>
+              <option value="contado">Contado</option>
+              <option value="cte">Cuenta corriente</option>
+            </select>
+            <button class="btn-sm" onclick="document.getElementById('hist-buscar').value='';document.getElementById('hist-tipo').value='';renderHistorial()">Limpiar</button>
+          </div>
+        </div>
+        <div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-bottom:1.25rem">
+          <div class="metric"><div class="metric-label">Total boletas</div><div class="metric-value" id="hist-total-n">0</div></div>
+          <div class="metric"><div class="metric-label">Total contado</div><div class="metric-value red" id="hist-total-cont">$0</div></div>
+          <div class="metric"><div class="metric-label">Total cta. cte.</div><div class="metric-value amber" id="hist-total-cte">$0</div></div>
+          <div class="metric"><div class="metric-label">Total general</div><div class="metric-value" id="hist-total-gen">$0</div></div>
+        </div>
+        <div id="lista-historial"></div>
+      </div>
+
       <!-- SEMANAL -->
       <div id="sec-semanal" class="section">
         <div class="section-header">
@@ -293,7 +320,7 @@
           <div class="metric"><div class="metric-label">PedidosYa Efectivo</div><div class="metric-value" id="mc-py-efectivo">$0</div></div>
           <div class="metric"><div class="metric-label">Mercado Pago</div><div class="metric-value" id="mc-mp">$0</div></div>
           <div class="metric"><div class="metric-label">Tarjeta Déb./Cré.</div><div class="metric-value" id="mc-tarjeta">$0</div></div>
-          <div class="metric"><div class="metric-label">Total</div><div class="metric-value" id="mc-total">$0</div></div>
+          <div class="metric"><div class="metric-label">Total del día</div><div class="metric-value" id="mc-total">$0</div></div>
           <div class="metric"><div class="metric-label">Diferencia acumulada</div><div class="metric-value" id="mc-dif">$0</div></div>
         </div>
 
@@ -471,6 +498,50 @@
     <div class="modal-actions">
       <button class="btn" onclick="cerrarModalEditarCaja()">Cancelar</button>
       <button class="btn primary" onclick="guardarEdicionCaja()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar boleta -->
+<div class="modal-overlay" id="modal-editar-boleta">
+  <div class="modal" style="max-width:540px">
+    <h3>✏ Editar boleta</h3>
+    <input type="hidden" id="edit-boleta-id">
+    <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px">
+      <div class="field"><label>Concepto</label><input type="text" id="edit-boleta-prov"></div>
+      <div class="field"><label>Empresa</label><select id="edit-boleta-empresa"></select></div>
+      <div class="field"><label>Categoría</label>
+        <select id="edit-boleta-cat">
+          <option value="">— Sin categoría —</option>
+          <option value="Mercadería">Mercadería</option>
+          <option value="Servicios">Servicios</option>
+          <option value="Sueldos">Sueldos</option>
+          <option value="Impuestos">Impuestos</option>
+          <option value="Alquiler">Alquiler</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Otros">Otros</option>
+        </select>
+      </div>
+      <div class="field"><label>Monto ($)</label><input type="number" id="edit-boleta-monto" min="0" step="0.01"></div>
+      <div class="field"><label>Fecha de boleta</label><input type="date" id="edit-boleta-fecha"></div>
+      <div class="field"><label>Tipo de pago</label>
+        <select id="edit-boleta-tipo" onchange="toggleEditMedio()">
+          <option value="contado">Contado</option>
+          <option value="cte">Cuenta corriente</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-medio"><label>Medio de pago</label>
+        <select id="edit-boleta-medio">
+          <option value="Efectivo">💵 Efectivo</option>
+          <option value="Transferencia">🏦 Transferencia</option>
+          <option value="Tarjeta">💳 Tarjeta Déb./Cré.</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-fecha-cte"><label>Fecha vencimiento</label><input type="date" id="edit-boleta-fecha-cte"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="cerrarModalEditarBoleta()">Cancelar</button>
+      <button class="btn primary" onclick="guardarEdicionBoleta()">Guardar cambios</button>
     </div>
   </div>
 </div>
