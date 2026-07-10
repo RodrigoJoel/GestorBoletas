@@ -603,7 +603,7 @@ window.renderHistorial = function(){
           <div class="mes-num" style="background:${sem&&sem.cerrada?'var(--text3)':'var(--accent)'}">${g.semanaNum||'—'}</div>
           <div>
             <div class="mes-titulo">${titulo}</div>
-            \${subtitulo?'<div class="mes-subtitulo">'+subtitulo+'</div>':''}
+            ${subtitulo?'<div class="mes-subtitulo">'+subtitulo+'</div>':''}
           </div>
         </div>
         <div class="mes-header-right">
