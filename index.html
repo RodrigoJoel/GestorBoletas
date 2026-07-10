@@ -67,6 +67,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Cajas
       </div>
+      <div class="nav-item" onclick="showSection('pedidosya',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12l3 3 5-5"/></svg>
+        PedidosYa
+      </div>
       <div class="nav-item" onclick="showSection('empresas',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M9 21V7l7-4v18"/><path d="M13 21V11h4v10"/></svg>
         Empresas
@@ -414,6 +418,33 @@
       </div>
 
       <!-- EMPRESAS -->
+      <!-- PEDIDOSYA -->
+      <div id="sec-pedidosya" class="section">
+        <div class="section-header">
+          <h2>🛵 Liquidaciones PedidosYa</h2>
+          <button class="btn primary" onclick="abrirNuevaLiquidacion()">+ Registrar liquidación</button>
+        </div>
+
+        <!-- Métricas globales -->
+        <div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:1.25rem">
+          <div class="metric"><div class="metric-label">Liquidaciones</div><div class="metric-value" id="py-cant">0</div></div>
+          <div class="metric"><div class="metric-label">Vendido PY Efectivo</div><div class="metric-value" id="py-tot-efec">$0</div></div>
+          <div class="metric"><div class="metric-label">Vendido PY Débito</div><div class="metric-value" id="py-tot-deb">$0</div></div>
+          <div class="metric"><div class="metric-label">Comisión total</div><div class="metric-value red" id="py-tot-com">$0</div></div>
+          <div class="metric"><div class="metric-label">Depósitos recibidos</div><div class="metric-value green" id="py-tot-dep">$0</div></div>
+          <div class="metric"><div class="metric-label">Diferencia acumulada</div><div class="metric-value" id="py-tot-dif">$0</div></div>
+        </div>
+
+        <!-- Ayuda rápida -->
+        <div class="alert info" style="margin-bottom:1rem;font-size:12px">
+          💡 <strong>Cómo funciona:</strong> Ingresá lo vendido en PY Efectivo (ya lo cobraste) y PY Débito (te lo depositan).
+          La comisión es el 30% del total vendido. El sistema calcula cuánto debería depositarte PY y lo compara con lo que realmente depositó.
+        </div>
+
+        <!-- Lista de liquidaciones -->
+        <div id="lista-liquidaciones"></div>
+      </div>
+
       <div id="sec-empresas" class="section">
         <div class="section-header"><h2>Gestión de empresas</h2></div>
         <div class="card">
@@ -543,6 +574,79 @@
     <div class="modal-actions">
       <button class="btn" onclick="cerrarModalEditarBoleta()">Cancelar</button>
       <button class="btn primary" onclick="guardarEdicionBoleta()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nueva liquidación PY -->
+<div class="modal-overlay" id="modal-py">
+  <div class="modal" style="max-width:520px">
+    <h3 id="modal-py-titulo">🛵 Registrar liquidación PedidosYa</h3>
+    <input type="hidden" id="py-edit-id">
+
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Período</div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="field"><label>Semana</label>
+        <select id="py-semana-id">
+          <option value="">— Sin semana —</option>
+        </select>
+      </div>
+      <div class="field"><label>Fecha inicio período</label><input type="date" id="py-fecha-inicio"></div>
+      <div class="field"><label>Fecha fin período</label><input type="date" id="py-fecha-fin"></div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Ventas del período</div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="field">
+        <label>💵 Vendido en Efectivo (PY Efec.)</label>
+        <input type="number" id="py-efectivo" placeholder="0.00" min="0" step="0.01" oninput="calcularPY()">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">Ya lo cobraste vos. PY lo descuenta del depósito.</div>
+      </div>
+      <div class="field">
+        <label>💳 Vendido en Débito (PY Déb.)</label>
+        <input type="number" id="py-debito" placeholder="0.00" min="0" step="0.01" oninput="calcularPY()">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">PY lo cobra y te lo deposita esta semana.</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Comisión PedidosYa</div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="field">
+        <label>% Comisión</label>
+        <input type="number" id="py-comision-pct" value="30" min="0" max="100" step="0.1" oninput="calcularPY()">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">Sobre el precio publicado en PY.</div>
+      </div>
+      <div class="field">
+        <label>Comisión calculada ($)</label>
+        <input type="number" id="py-comision-monto" placeholder="0.00" min="0" step="0.01" style="background:var(--surface2)" readonly>
+      </div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Depósito recibido de PY</div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="field">
+        <label>Depósito esperado ($)</label>
+        <input type="number" id="py-deposito-esperado" placeholder="0.00" min="0" step="0.01" style="background:var(--surface2)" readonly>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">Déb. − Comisión total − Efec. adelantado</div>
+      </div>
+      <div class="field">
+        <label>Depósito real recibido ($)</label>
+        <input type="number" id="py-deposito-real" placeholder="0.00" min="0" step="0.01" oninput="calcularPY()">
+      </div>
+    </div>
+
+    <!-- Resultado calculado -->
+    <div id="py-resultado" style="padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);margin-bottom:12px;font-size:13px;display:none">
+    </div>
+
+    <div class="field" style="margin-bottom:12px">
+      <label>Comentarios (opcional)</label>
+      <input type="text" id="py-comentario" placeholder="Ej: Semana del 10 al 16 de julio...">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="cerrarModalPY()">Cancelar</button>
+      <button class="btn primary" onclick="guardarLiquidacion()">Guardar liquidación</button>
     </div>
   </div>
 </div>

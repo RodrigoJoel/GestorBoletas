@@ -20,9 +20,9 @@ const fbApp = initializeApp(firebaseConfig);
 const auth  = getAuth(fbApp);
 const db    = getFirestore(fbApp);
 
-let boletas = [], semanas = [], meses = [], empresas = [], recargas = [], cajas = [];
+let boletas = [], semanas = [], meses = [], empresas = [], recargas = [], cajas = [], liquidaciones = [];
 let pagoCtePendienteId = null;
-let unsubBoletas, unsubSemanas, unsubMeses, unsubEmpresas, unsubRecargas, unsubCajas;
+let unsubBoletas, unsubSemanas, unsubMeses, unsubEmpresas, unsubRecargas, unsubCajas, unsubLiq;
 
 // ── AUTH ──
 onAuthStateChanged(auth, user => {
@@ -34,7 +34,7 @@ onAuthStateChanged(auth, user => {
   } else {
     document.getElementById('login-screen').style.display='flex';
     document.getElementById('app-screen').style.display='none';
-    [unsubBoletas,unsubSemanas,unsubMeses,unsubEmpresas,unsubRecargas,unsubCajas].forEach(u=>u&&u());
+    [unsubBoletas,unsubSemanas,unsubMeses,unsubEmpresas,unsubRecargas,unsubCajas,unsubLiq].forEach(u=>u&&u());
   }
 });
 
@@ -74,6 +74,10 @@ function iniciarListeners(){
   unsubCajas = onSnapshot(query(collection(db,'cajas'),orderBy('fecha','desc')), snap=>{
     cajas = snap.docs.map(d=>({id:d.id,...d.data()}));
     renderCajas();
+  });
+  unsubLiq = onSnapshot(query(collection(db,'liquidaciones'),orderBy('fechaInicio','desc')), snap=>{
+    liquidaciones = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderLiquidaciones();
   });
 }
 
@@ -269,6 +273,8 @@ window.cerrarMes = async function(){
 
 // ── CAJAS ──
 window.guardarCaja = async function(){
+  const sem = semanaActiva();
+  const mesActivo = meses.find(m => !m.cerrado);
   const cajera      = document.getElementById('cj-cajera').value.trim();
   const fecha       = document.getElementById('cj-fecha').value;
   const fechaCierre = (document.getElementById('cj-fecha-cierre')||{value:null}).value||null;
@@ -290,6 +296,10 @@ window.guardarCaja = async function(){
   const diferencia = difTipo==='falta' ? -difMonto : difTipo==='sobra' ? difMonto : 0;
 
   await addDoc(collection(db,'cajas'),{
+    semanaId: sem ? sem.id : null,
+    semanaNum: sem ? sem.num : null,
+    mesId: mesActivo ? mesActivo.id : null,
+    mesNombre: mesActivo ? mesActivo.mes : null,
     cajera, fecha, fechaCierre,
     horaInicio: hInicio||null, horaCierre: hCierre||null,
     efectivo, pyDebito: pyDeb, pyEfectivo: pyEfec, mercadoPago: mp, tarjeta,
@@ -685,6 +695,242 @@ window.guardarEdicionBoleta = async function(){
 };
 
 
+// ── PEDIDOSYA ──
+
+window.calcularPY = function(){
+  const efec    = parseFloat(document.getElementById('py-efectivo').value)||0;
+  const deb     = parseFloat(document.getElementById('py-debito').value)||0;
+  const pct     = parseFloat(document.getElementById('py-comision-pct').value)||30;
+  const depReal = parseFloat(document.getElementById('py-deposito-real').value)||0;
+
+  // Total vendido en PY (ambos medios, al precio publicado)
+  const totalVendido = efec + deb;
+
+  // Comisión sobre el total vendido (precio publicado)
+  const comision = totalVendido * (pct / 100);
+
+  // Depósito esperado:
+  // PY cobra al cliente el débito, le descuenta comisión sobre todo lo vendido,
+  // y descuenta también lo que ya cobraste vos en efectivo
+  const depositoEsperado = deb - comision - efec;
+
+  // Diferencia = real - esperado
+  const diferencia = depReal - depositoEsperado;
+
+  document.getElementById('py-comision-monto').value   = comision.toFixed(2);
+  document.getElementById('py-deposito-esperado').value = depositoEsperado.toFixed(2);
+
+  const resDiv = document.getElementById('py-resultado');
+  if(totalVendido > 0 || depReal > 0){
+    resDiv.style.display = 'block';
+    const difColor = diferencia > 0.5 ? 'var(--success)' : diferencia < -0.5 ? 'var(--danger)' : 'var(--text2)';
+    const difTexto = Math.abs(diferencia) < 0.5 ? '✓ Coincide exacto' :
+                     diferencia > 0 ? `▲ PY depositó $${diferencia.toFixed(2)} de más` :
+                                      `▼ PY depositó $${Math.abs(diferencia).toFixed(2)} de menos`;
+    resDiv.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Total vendido</div><div style="font-size:15px;font-weight:600">$${totalVendido.toLocaleString('es-AR',{minimumFractionDigits:2})}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Comisión (${pct}%)</div><div style="font-size:15px;font-weight:600;color:var(--danger)">$${comision.toLocaleString('es-AR',{minimumFractionDigits:2})}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Dep. esperado</div><div style="font-size:15px;font-weight:600;color:var(--accent)">$${depositoEsperado.toLocaleString('es-AR',{minimumFractionDigits:2})}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Diferencia</div><div style="font-size:15px;font-weight:600;color:${difColor}">${difTexto}</div></div>
+      </div>`;
+  } else {
+    resDiv.style.display = 'none';
+  }
+};
+
+window.abrirNuevaLiquidacion = function(){
+  document.getElementById('py-edit-id').value = '';
+  document.getElementById('modal-py-titulo').textContent = '🛵 Registrar liquidación PedidosYa';
+  document.getElementById('py-efectivo').value = '';
+  document.getElementById('py-debito').value = '';
+  document.getElementById('py-comision-pct').value = '30';
+  document.getElementById('py-comision-monto').value = '';
+  document.getElementById('py-deposito-esperado').value = '';
+  document.getElementById('py-deposito-real').value = '';
+  document.getElementById('py-comentario').value = '';
+  document.getElementById('py-resultado').style.display = 'none';
+  // Fecha inicio/fin: por defecto la semana activa
+  const sem = semanaActiva();
+  document.getElementById('py-fecha-inicio').value = sem ? sem.inicio : hoy();
+  document.getElementById('py-fecha-fin').value    = sem ? (sem.fin||hoy()) : hoy();
+  // Poblar select semanas
+  const sel = document.getElementById('py-semana-id');
+  sel.innerHTML = '<option value="">— Sin semana —</option>' +
+    [...semanas].reverse().map(s=>`<option value="${s.id}"${sem&&s.id===sem.id?' selected':''}>${s.num>0?'Semana '+s.num:'Sem. '+s.num} (${fmtF(s.inicio)})</option>`).join('');
+  document.getElementById('modal-py').classList.add('open');
+};
+
+window.abrirEditarLiquidacion = function(id){
+  const liq = liquidaciones.find(l=>l.id===id);
+  if(!liq) return;
+  document.getElementById('py-edit-id').value = id;
+  document.getElementById('modal-py-titulo').textContent = '✏ Editar liquidación PedidosYa';
+  document.getElementById('py-efectivo').value         = liq.efectivo||0;
+  document.getElementById('py-debito').value           = liq.debito||0;
+  document.getElementById('py-comision-pct').value     = liq.comisionPct||30;
+  document.getElementById('py-comision-monto').value   = (liq.comisionMonto||0).toFixed(2);
+  document.getElementById('py-deposito-esperado').value= (liq.depositoEsperado||0).toFixed(2);
+  document.getElementById('py-deposito-real').value    = liq.depositoReal||0;
+  document.getElementById('py-comentario').value       = liq.comentario||'';
+  document.getElementById('py-fecha-inicio').value     = liq.fechaInicio||'';
+  document.getElementById('py-fecha-fin').value        = liq.fechaFin||'';
+  // Select semana
+  const sel = document.getElementById('py-semana-id');
+  sel.innerHTML = '<option value="">— Sin semana —</option>' +
+    [...semanas].reverse().map(s=>`<option value="${s.id}"${liq.semanaId===s.id?' selected':''}>${'Semana '+s.num} (${fmtF(s.inicio)})</option>`).join('');
+  calcularPY();
+  document.getElementById('modal-py').classList.add('open');
+};
+
+window.cerrarModalPY = function(){
+  document.getElementById('modal-py').classList.remove('open');
+};
+
+window.guardarLiquidacion = async function(){
+  const editId      = document.getElementById('py-edit-id').value;
+  const semId       = document.getElementById('py-semana-id').value;
+  const fechaInicio = document.getElementById('py-fecha-inicio').value;
+  const fechaFin    = document.getElementById('py-fecha-fin').value;
+  const efectivo    = parseFloat(document.getElementById('py-efectivo').value)||0;
+  const debito      = parseFloat(document.getElementById('py-debito').value)||0;
+  const comisionPct = parseFloat(document.getElementById('py-comision-pct').value)||30;
+  const depReal     = parseFloat(document.getElementById('py-deposito-real').value)||0;
+  const comentario  = document.getElementById('py-comentario').value.trim();
+
+  if(!fechaInicio){ alert('Ingresá la fecha de inicio del período'); return; }
+
+  const totalVendido      = efectivo + debito;
+  const comisionMonto     = totalVendido * (comisionPct / 100);
+  const depositoEsperado  = debito - comisionMonto - efectivo;
+  const diferencia        = depReal - depositoEsperado;
+  const sem               = semanas.find(s=>s.id===semId);
+
+  const data = {
+    semanaId:    semId||null,
+    semanaNum:   sem?sem.num:null,
+    fechaInicio, fechaFin:   fechaFin||null,
+    efectivo,    debito,
+    totalVendido, comisionPct, comisionMonto,
+    depositoEsperado, depositoReal: depReal, diferencia,
+    comentario:  comentario||null,
+    creadoEn:    editId ? undefined : new Date().toISOString()
+  };
+  // Quitar undefined
+  Object.keys(data).forEach(k=>data[k]===undefined&&delete data[k]);
+
+  if(editId){
+    await updateDoc(doc(db,'liquidaciones',editId), data);
+  } else {
+    await addDoc(collection(db,'liquidaciones'), data);
+  }
+  cerrarModalPY();
+};
+
+window.eliminarLiquidacion = async function(id){
+  if(!confirm('¿Eliminar esta liquidación?')) return;
+  await deleteDoc(doc(db,'liquidaciones',id));
+};
+
+window.renderLiquidaciones = function(){
+  // Métricas globales
+  const totEfec = liquidaciones.reduce((a,l)=>a+(l.efectivo||0),0);
+  const totDeb  = liquidaciones.reduce((a,l)=>a+(l.debito||0),0);
+  const totCom  = liquidaciones.reduce((a,l)=>a+(l.comisionMonto||0),0);
+  const totDep  = liquidaciones.reduce((a,l)=>a+(l.depositoReal||0),0);
+  const totDif  = liquidaciones.reduce((a,l)=>a+(l.diferencia||0),0);
+
+  const setM=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  setM('py-cant',    liquidaciones.length);
+  setM('py-tot-efec', fmt(totEfec));
+  setM('py-tot-deb',  fmt(totDeb));
+  setM('py-tot-com',  fmt(totCom));
+  setM('py-tot-dep',  fmt(totDep));
+  const difEl = document.getElementById('py-tot-dif');
+  if(difEl){
+    difEl.textContent = (totDif>=0?'+':'')+fmt(totDif);
+    difEl.className   = 'metric-value '+(totDif<-0.5?'red':totDif>0.5?'amber':'green');
+  }
+
+  const lista = document.getElementById('lista-liquidaciones');
+  if(!lista) return;
+
+  if(!liquidaciones.length){
+    lista.innerHTML = '<div style="text-align:center;color:var(--text3);padding:2rem;font-style:italic;font-size:13px">Sin liquidaciones registradas. Usá el botón "Registrar liquidación" para empezar.</div>';
+    return;
+  }
+
+  lista.innerHTML = liquidaciones.map(liq=>{
+    const diferencia = liq.diferencia||0;
+    const difColor   = Math.abs(diferencia)<0.5?'var(--success)':diferencia>0?'var(--warning)':'var(--danger)';
+    const difTexto   = Math.abs(diferencia)<0.5?'✓ Exacto':diferencia>0?`▲ De más: ${fmt(diferencia)}`:`▼ De menos: ${fmt(Math.abs(diferencia))}`;
+    const periodo    = liq.fechaFin
+      ? `${fmtF(liq.fechaInicio)} → ${fmtF(liq.fechaFin)}`
+      : fmtF(liq.fechaInicio);
+    const uid  = 'py-body-'+liq.id;
+    const chid = 'py-chev-'+liq.id;
+
+    return `<div class="mes-card" style="margin-bottom:.75rem">
+      <div class="mes-header" onclick="toggleMes('${uid}','${chid}')">
+        <div class="mes-header-left">
+          <div class="mes-num" style="background:#e8581a;font-size:11px">PY</div>
+          <div>
+            <div class="mes-titulo">${liq.semanaNum?'Semana '+liq.semanaNum+' — ':''} ${periodo}</div>
+            <div class="mes-subtitulo">
+              Vendido: ${fmt(liq.totalVendido||0)} &nbsp;·&nbsp;
+              Comisión (${liq.comisionPct||30}%): ${fmt(liq.comisionMonto||0)} &nbsp;·&nbsp;
+              Depósito real: ${fmt(liq.depositoReal||0)}
+            </div>
+          </div>
+        </div>
+        <div class="mes-header-right">
+          <div style="text-align:right">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Diferencia</div>
+            <div style="font-size:16px;font-weight:700;color:${difColor}">${difTexto}</div>
+          </div>
+          <span class="mes-chevron" id="${chid}">▼</span>
+        </div>
+      </div>
+      <div class="mes-body" id="${uid}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:1rem">
+
+          <div class="mes-sem-card">
+            <div class="mes-sem-titulo">💰 Ventas del período</div>
+            <div class="mes-sem-fila"><span>💵 PY Efectivo</span><strong>${fmt(liq.efectivo||0)}</strong></div>
+            <div class="mes-sem-fila"><span>💳 PY Débito</span><strong>${fmt(liq.debito||0)}</strong></div>
+            <div class="mes-sem-fila" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">
+              <span><strong>Total vendido</strong></span><strong>${fmt(liq.totalVendido||0)}</strong>
+            </div>
+          </div>
+
+          <div class="mes-sem-card">
+            <div class="mes-sem-titulo">📊 Comisión PedidosYa (${liq.comisionPct||30}%)</div>
+            <div class="mes-sem-fila"><span>Sobre total vendido</span><strong style="color:var(--danger)">${fmt(liq.comisionMonto||0)}</strong></div>
+            <div class="mes-sem-fila" style="margin-top:6px"><span style="font-size:10px;color:var(--text3)">Efec. ya cobrado (descuento)</span><span style="font-size:11px">- ${fmt(liq.efectivo||0)}</span></div>
+          </div>
+
+          <div class="mes-sem-card">
+            <div class="mes-sem-titulo">🏦 Depósito PedidosYa</div>
+            <div class="mes-sem-fila"><span>Esperado</span><strong style="color:var(--accent)">${fmt(liq.depositoEsperado||0)}</strong></div>
+            <div class="mes-sem-fila"><span>Real recibido</span><strong style="color:var(--success)">${fmt(liq.depositoReal||0)}</strong></div>
+            <div class="mes-sem-fila" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">
+              <span><strong>Diferencia</strong></span>
+              <strong style="color:${difColor}">${diferencia>=0?'+':''}${fmt(diferencia)}</strong>
+            </div>
+          </div>
+
+        </div>
+        ${liq.comentario?`<div class="caja-comentario">💬 ${liq.comentario}</div>`:''}
+        <div style="display:flex;gap:8px;margin-top:.75rem">
+          <button class="btn-sm" onclick="abrirEditarLiquidacion('${liq.id}')">✏ Editar</button>
+          <button class="icon-btn danger" onclick="eliminarLiquidacion('${liq.id}')">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+
 // ── EMPRESAS ──
 window.agregarEmpresa = async function(){
   const nombre = document.getElementById('inp-empresa-nueva').value.trim();
@@ -729,8 +975,9 @@ function render(){
   const ctePagSemTr = sem?boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id&&b.medioPagoCte==='Transferencia').reduce((a,b)=>a+b.monto,0):0;
   const ctePagSemTj = sem?boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id&&b.medioPagoCte==='Tarjeta').reduce((a,b)=>a+b.monto,0):0;
   // Ingresos de la semana (cajas de la semana)
-  const ingresosSemana = cajas.filter(cj=>cj.semanaId===sem?.id).reduce((a,cj)=>a+(cj.total||0),0);
+  //const ingresosSemana = cajas.filter(cj=>cj.semanaId===sem?.id).reduce((a,cj)=>a+(cj.total||0),0);
   // const ingresosHoy = cajas.reduce((a,cj)=>a+(cj.total||0),0);
+  const ingresosSemana = cajas.filter(cj => cj.semanaId === sem.id).reduce((a,cj)=>a+(cj.total||0),0);
   document.getElementById('m-gastado-sem').textContent  = fmt(gastadoContado);
   document.getElementById('m-tot-efectivo').textContent = fmt(totEfectivo+ctePagSemEf);
   document.getElementById('m-tot-transf').textContent   = fmt(totTransf+ctePagSemTr);
