@@ -20,6 +20,7 @@ const fbApp = initializeApp(firebaseConfig);
 const auth  = getAuth(fbApp);
 const db    = getFirestore(fbApp);
 
+
 let boletas = [], semanas = [], meses = [], empresas = [], recargas = [], cajas = [], liquidaciones = [];
 let pagoCtePendienteId = null;
 let unsubBoletas, unsubSemanas, unsubMeses, unsubEmpresas, unsubRecargas, unsubCajas, unsubLiq;
@@ -74,6 +75,7 @@ function iniciarListeners(){
   unsubCajas = onSnapshot(query(collection(db,'cajas'),orderBy('fecha','desc')), snap=>{
     cajas = snap.docs.map(d=>({id:d.id,...d.data()}));
     renderCajas();
+    render(); // actualiza ingresos en Diario, Semanal y Mensual
   });
   unsubLiq = onSnapshot(query(collection(db,'liquidaciones'),orderBy('fechaInicio','desc')), snap=>{
     liquidaciones = snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -292,7 +294,9 @@ window.guardarCaja = async function(){
   if(!cajera){ alert('Ingresá el nombre de la cajera'); return; }
   if(!fecha) { alert('Ingresá la fecha de la caja'); return; }
 
-  const total = efectivo + pyDeb + pyEfec + mp + tarjeta;
+  //const total = efectivo + pyDeb + pyEfec + mp + tarjeta;
+  // se saca pyefec ya que se suma en efectivo y se duplica el total de la caja
+  const total = efectivo + pyDeb + mp + tarjeta;
   const diferencia = difTipo==='falta' ? -difMonto : difTipo==='sobra' ? difMonto : 0;
 
   await addDoc(collection(db,'cajas'),{
@@ -975,9 +979,15 @@ function render(){
   const ctePagSemTr = sem?boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id&&b.medioPagoCte==='Transferencia').reduce((a,b)=>a+b.monto,0):0;
   const ctePagSemTj = sem?boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id&&b.medioPagoCte==='Tarjeta').reduce((a,b)=>a+b.monto,0):0;
   // Ingresos de la semana (cajas de la semana)
-  //const ingresosSemana = cajas.filter(cj=>cj.semanaId===sem?.id).reduce((a,cj)=>a+(cj.total||0),0);
+  // const ingresosSemana = cajas.filter(cj=>cj.semanaId===sem?.id).reduce((a,cj)=>a+(cj.total||0),0);
   // const ingresosHoy = cajas.reduce((a,cj)=>a+(cj.total||0),0);
-  const ingresosSemana = cajas.filter(cj => cj.semanaId === sem.id).reduce((a,cj)=>a+(cj.total||0),0);
+  //const ingresosSemana = cajas.filter(cj => cj.semanaId === sem.id).reduce((a,cj)=>a+(cj.total||0),0);
+  const ingresosSemana = sem
+    ? cajas.filter(cj =>
+        cj.semanaId === sem.id ||
+        (!cj.semanaId && cj.fecha >= sem.inicio && cj.fecha <= (sem.fin || hoy()))
+      ).reduce((a,cj)=>a+(cj.total||0),0)
+    : 0;
   document.getElementById('m-gastado-sem').textContent  = fmt(gastadoContado);
   document.getElementById('m-tot-efectivo').textContent = fmt(totEfectivo+ctePagSemEf);
   document.getElementById('m-tot-transf').textContent   = fmt(totTransf+ctePagSemTr);
@@ -1026,7 +1036,10 @@ function render(){
   if(sem){
     const contSemAct = boletas.filter(b=>b.semanaId===sem.id&&b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
     const ctePagSemAct = boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===sem.id).reduce((a,b)=>a+b.monto,0);
-    const ingSemAct = cajas.filter(cj=>cj.fecha>=sem.inicio&&cj.fecha<=(sem.fin||hoy())).reduce((a,cj)=>a+(cj.total||0),0);
+    const ingSemAct = cajas.filter(cj=>
+      cj.semanaId === sem.id ||
+      (!cj.semanaId && cj.fecha >= sem.inicio && cj.fecha <= (sem.fin||hoy()))
+    ).reduce((a,cj)=>a+(cj.total||0),0);
     document.getElementById('m-sem-eg').textContent       = fmt(contSemAct+ctePagSemAct);
     document.getElementById('m-sem-ingresos').textContent = fmt(ingSemAct);
     document.getElementById('m-sem-cte-pag').textContent  = fmt(ctePagSemAct);
@@ -1045,7 +1058,12 @@ function render(){
       const cont    = boletas.filter(b=>b.semanaId===s.id&&b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
       const ctePag  = boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===s.id).reduce((a,b)=>a+b.monto,0);
       const egTotal = cont+ctePag;
-      const ingSem  = cajas.filter(cj=>cj.fecha>=s.inicio&&cj.fecha<=(s.fin||hoy())).reduce((a,cj)=>a+(cj.total||0),0);
+      // Buscar por semanaId primero (más preciso), fallback por rango de fechas
+      const cajasSem = cajas.filter(cj=>
+        cj.semanaId === s.id ||
+        (!cj.semanaId && cj.fecha >= s.inicio && cj.fecha <= (s.fin||hoy()))
+      );
+      const ingSem = cajasSem.reduce((a,cj)=>a+(cj.total||0),0);
       const balance = ingSem - egTotal;
       const balColor = balance>=0?'var(--success)':'var(--danger)';
 
@@ -1261,7 +1279,7 @@ function render(){
       <td>${fmtF(b.fechaCte)}${venc?' <span class="badge vencida">VENCIDA</span>':''}</td>
       <td>${b.pagadaCte?'<span class="badge pagada-cte">Pagada</span>':'<span class="badge cte">Pendiente</span>'}</td>
       <td>${fmtF(b.fechaPagoCte)}</td>
-      <td style="font-size:12px">${b.medioPagoCte?(b.medioPagoCte==='Transferencia'?'🏦 Transf.':'💵 Efectivo'):'—'}</td>
+      <td style="font-size:12px">${b.medioPagoCte?(b.medioPagoCte==='Transferencia'?'🏦 Transf.':b.medioPagoCte==='Tarjeta'?'💳 Tarjeta':'💵 Efectivo'):'—'}</td>
       <td style="font-size:12px">${b.semanaNumPago?'Sem. '+b.semanaNumPago:'—'}</td>
       <td><div class="row-actions">
         ${!b.pagadaCte?`<button class="btn-sm success" onclick="abrirModalPago('${b.id}')">✓ Pagar</button>`:''}
