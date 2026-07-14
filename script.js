@@ -1126,7 +1126,10 @@ function render(){
     const fin0 = mesActivo.fin||hoy();
     const eg0  = boletas.filter(b=>b.tipo==='contado'&&b.fecha>=mesActivo.inicio&&b.fecha<=fin0).reduce((a,b)=>a+b.monto,0)
                + boletas.filter(b=>b.tipo==='cte'&&b.pagadaCte&&b.fechaPagoCte>=mesActivo.inicio&&b.fechaPagoCte<=fin0).reduce((a,b)=>a+b.monto,0);
-    const ing0 = cajas.filter(cj=>cj.fecha>=mesActivo.inicio&&cj.fecha<=fin0).reduce((a,cj)=>a+(cj.total||0),0);
+    const ing0 = cajas.filter(cj=>
+      cj.mesId === mesActivo.id ||
+      (!cj.mesId && cj.fecha>=mesActivo.inicio && cj.fecha<=fin0)
+    ).reduce((a,cj)=>a+(cj.total||0),0);
     const bal0 = ing0-eg0;
     document.getElementById('m-mes-eg').textContent      = fmt(eg0);
     document.getElementById('m-mes-ingresos').textContent= fmt(ing0);
@@ -1154,7 +1157,10 @@ function render(){
       const ctePag = cteMes.reduce((a,b)=>a+b.monto,0);
       const total  = cont+ctePag;
       // Ingresos del mes (cajas)
-      const ingresosMes = cajas.filter(cj=>cj.fecha>=m.inicio&&cj.fecha<=fin).reduce((a,cj)=>a+(cj.total||0),0);
+      const ingresosMes = cajas.filter(cj=>
+        cj.mesId === m.id ||
+        (!cj.mesId && cj.fecha>=m.inicio && cj.fecha<=fin)
+      ).reduce((a,cj)=>a+(cj.total||0),0);
       const balanceMes  = ingresosMes - total;
 
       // Semanas del mes
@@ -1181,17 +1187,25 @@ function render(){
       });
 
       const semCardsHTML = semMes.length ? semMes.map(s=>{
-        const recSem = recargas.filter(r=>r.semanaId===s.id).reduce((a,r)=>a+r.monto,0);
-        const fondoR = s.fondo+recSem;
-        const contSem = boletas.filter(b=>b.semanaId===s.id&&b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
-        const cteSem = boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===s.id).reduce((a,b)=>a+b.monto,0);
+        const contSem  = boletas.filter(b=>b.semanaId===s.id&&b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
+        const cteSem   = boletas.filter(b=>b.tipo==='cte'&&b.semanaIdPago===s.id).reduce((a,b)=>a+b.monto,0);
+        const ingSem   = cajas.filter(cj=>
+          cj.semanaId===s.id ||
+          (!cj.semanaId && cj.fecha>=s.inicio && cj.fecha<=(s.fin||hoy()))
+        ).reduce((a,cj)=>a+(cj.total||0),0);
+        const egSem    = contSem + cteSem;
+        const balSem   = ingSem - egSem;
+        const balColor = balSem>=0?'var(--success)':'var(--danger)';
         return `<div class="mes-sem-card">
           <div class="mes-sem-titulo">Semana ${s.num} ${!s.cerrada?'<span class="badge activa" style="font-size:9px">Activa</span>':''}</div>
-          <div class="mes-sem-fila"><span>${fmtF(s.inicio)} → ${s.fin?fmtF(s.fin):'hoy'}</span></div>
-          <div class="mes-sem-fila"><span>Fondo</span><strong>${fmt(fondoR)}</strong></div>
-          <div class="mes-sem-fila"><span>Contado</span><span style="color:var(--danger)">${fmt(contSem)}</span></div>
-          <div class="mes-sem-fila"><span>Cta. Cte. pagada</span><span style="color:var(--warning)">${fmt(cteSem)}</span></div>
-          <div class="mes-sem-fila" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span>Saldo</span><strong style="color:${fondoR-(contSem+cteSem)<0?'var(--danger)':'var(--success)'}">${fmt(fondoR-contSem-cteSem)}</strong></div>
+          <div class="mes-sem-fila"><span style="font-size:10px;color:var(--text3)">${fmtF(s.inicio)} → ${s.fin?fmtF(s.fin):'hoy'}</span></div>
+          <div class="mes-sem-fila"><span>📥 Ingresos</span><strong style="color:var(--success)">${fmt(ingSem)}</strong></div>
+          <div class="mes-sem-fila"><span>📤 Contado</span><span style="color:var(--danger)">${fmt(contSem)}</span></div>
+          <div class="mes-sem-fila"><span>📤 Cta. Cte.</span><span style="color:var(--warning)">${fmt(cteSem)}</span></div>
+          <div class="mes-sem-fila" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">
+            <span><strong>Balance</strong></span>
+            <strong style="color:${balColor}">${balSem>=0?'+':''}${fmt(balSem)}</strong>
+          </div>
         </div>`;
       }).join('') : '<p style="font-size:12px;color:var(--text3)">Sin semanas en este mes.</p>';
 
