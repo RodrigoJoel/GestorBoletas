@@ -184,8 +184,8 @@ window.confirmarPago = async function(){
     pagadaCte: true,
     fechaPagoCte: fecha,
     medioPagoCte: medio,
-    semanaIdPago: semPago?semPago.id:null,
-    semanaNumPago: semPago?semPago.num:null
+    semanaIdPago: semPago ? semPago.id : null,
+    semanaNumPago: semPago ? semPago.num : null
   });
   cerrarModal();
 };
@@ -966,7 +966,28 @@ function render(){
 
   // Boletas de la semana actual (o todas si no hay semana)
   const bSem = sem ? boletas.filter(b=>b.semanaId===sem.id) : boletas.filter(b=>b.fecha===h);
-  const gastadoContado = bSem.filter(b=>b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
+ // const gastadoContado = bSem.filter(b=>b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
+  // Contado por medio (solo efectivo y transferencia)
+  const contadoEfectivo = bSem
+    .filter(b => b.tipo === 'contado' && b.medio === 'Efectivo')
+    .reduce((a,b)=>a+b.monto,0);
+
+  const contadoTransferencia = bSem
+    .filter(b => b.tipo === 'contado' && b.medio === 'Transferencia')
+    .reduce((a,b)=>a+b.monto,0);
+
+  // Cuenta corriente pagada en esta semana
+  const ctePagadaSemana = sem
+    ? boletas
+        .filter(b => b.tipo === 'cte' && b.semanaIdPago === sem.id)
+        .reduce((a,b)=>a+b.monto,0)
+    : 0;
+
+  // Total egresado semana
+  const gastadoContado =
+    contadoEfectivo +
+    contadoTransferencia +
+    ctePagadaSemana;
   const ctePendMonto = boletas.filter(b=>b.tipo==='cte'&&!b.pagadaCte).reduce((a,b)=>a+b.monto,0);
 
   // Totales por medio de pago (boletas contado de la semana)
