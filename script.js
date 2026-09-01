@@ -652,6 +652,8 @@ window.abrirEditarBoleta = function(id){
   document.getElementById('edit-boleta-tipo').value  = b.tipo||'contado';
   document.getElementById('edit-boleta-cat').value   = b.categoria||'';
   document.getElementById('edit-boleta-fecha-cte').value = b.fechaCte||'';
+  document.getElementById('edit-boleta-fecha-pago').value = b.fechaPagoCte||'';
+  document.getElementById('edit-boleta-pagada').value = b.pagadaCte ? 'true' : 'false';
   // Poblar select empresa
   const selEmp = document.getElementById('edit-boleta-empresa');
   selEmp.innerHTML = '<option value="">— Seleccionar —</option>' +
@@ -670,10 +672,13 @@ window.cerrarModalEditarBoleta = function(){
 window.toggleEditMedio = function(){
   const tipo = (document.getElementById('edit-boleta-tipo')||{}).value;
   const esCte = tipo==='cte';
+  const pagada = (document.getElementById('edit-boleta-pagada')||{}).value==='true';
   const fMed = document.getElementById('edit-field-medio');
   const fCte = document.getElementById('edit-field-fecha-cte');
+  const fPago = document.getElementById('edit-field-fecha-pago');
   if(fMed) fMed.style.display = esCte?'none':'block';
   if(fCte) fCte.style.display = esCte?'block':'none';
+  if(fPago) fPago.style.display = (esCte&&pagada)?'block':'none';
 };
 
 window.guardarEdicionBoleta = async function(){
@@ -686,15 +691,27 @@ window.guardarEdicionBoleta = async function(){
   const tipo    = document.getElementById('edit-boleta-tipo').value;
   const medio   = tipo==='contado'?document.getElementById('edit-boleta-medio').value:null;
   const fechaCte= tipo==='cte'?document.getElementById('edit-boleta-fecha-cte').value:null;
+  const pagada  = document.getElementById('edit-boleta-pagada').value==='true';
+  const fechaPago = (tipo==='cte'&&pagada)?document.getElementById('edit-boleta-fecha-pago').value:null;
   if(!prov)  { alert('Ingresá el concepto'); return; }
   if(!empresa){ alert('Seleccioná una empresa'); return; }
   if(!monto)  { alert('Ingresá un monto válido'); return; }
   if(tipo==='cte'&&!fechaCte){ alert('Ingresá la fecha de vencimiento'); return; }
-  await updateDoc(doc(db,'boletas',id),{
+  if(tipo==='cte'&&pagada&&!fechaPago){ alert('Ingresá la fecha de pago'); return; }
+  const sem = semanaDelPago(fecha);
+  const datos = {
     proveedor:prov, empresa, categoria:cat,
     monto, fecha, tipo, medio:medio||null,
-    fechaCte:fechaCte||null
-  });
+    fechaCte:fechaCte||null,
+    semanaId: sem?sem.id:null, semanaNum: sem?sem.num:null
+  };
+  if(tipo==='cte'&&pagada){
+    const semPago = semanaDelPago(fechaPago);
+    datos.fechaPagoCte = fechaPago;
+    datos.semanaIdPago = semPago?semPago.id:null;
+    datos.semanaNumPago = semPago?semPago.num:null;
+  }
+  await updateDoc(doc(db,'boletas',id), datos);
   cerrarModalEditarBoleta();
 };
 
@@ -1318,6 +1335,7 @@ function render(){
       <td style="font-size:12px">${b.semanaNumPago?'Sem. '+b.semanaNumPago:'—'}</td>
       <td><div class="row-actions">
         ${!b.pagadaCte?`<button class="btn-sm success" onclick="abrirModalPago('${b.id}')">✓ Pagar</button>`:''}
+        <button class="btn-sm" onclick="abrirEditarBoleta('${b.id}')">✏</button>
         <button class="icon-btn danger" onclick="eliminarBoleta('${b.id}')">✕</button>
       </div></td>
     </tr>`;

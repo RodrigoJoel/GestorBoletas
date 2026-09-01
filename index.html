@@ -539,6 +539,7 @@
   <div class="modal" style="max-width:540px">
     <h3>✏ Editar boleta</h3>
     <input type="hidden" id="edit-boleta-id">
+    <input type="hidden" id="edit-boleta-pagada">
     <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px">
       <div class="field"><label>Concepto</label><input type="text" id="edit-boleta-prov"></div>
       <div class="field"><label>Empresa</label><select id="edit-boleta-empresa"></select></div>
@@ -570,6 +571,7 @@
         </select>
       </div>
       <div class="field" id="edit-field-fecha-cte"><label>Fecha vencimiento</label><input type="date" id="edit-boleta-fecha-cte"></div>
+      <div class="field" id="edit-field-fecha-pago"><label>Fecha de pago</label><input type="date" id="edit-boleta-fecha-pago"></div>
     </div>
     <div class="modal-actions">
       <button class="btn" onclick="cerrarModalEditarBoleta()">Cancelar</button>
