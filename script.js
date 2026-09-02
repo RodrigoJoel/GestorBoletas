@@ -110,6 +110,17 @@ function semanaDelPago(fechaPago){
   return null;
 }
 
+// Determina a qué mes pertenece una fecha (por rango inicio/fin)
+function mesDeFecha(fecha){
+  if(!fecha) return null;
+  for(const m of meses){
+    const desde = m.inicio;
+    const hasta = m.fin || hoy();
+    if(fecha >= desde && fecha <= hasta) return m;
+  }
+  return null;
+}
+
 // ── NAV ──
 window.showSection = function(s, el){
   document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
@@ -418,17 +429,23 @@ window.renderCajas = function(){
     return;
   }
 
-  lista.innerHTML = cajasVistas.map((cj,i)=>{
-    const inicial = cj.cajera.trim().charAt(0).toUpperCase();
-    const horario = [cj.horaInicio, cj.horaCierre].filter(Boolean).join(' → ') || 'Sin horario';
-    const difHtml = cj.diferencia===0
-      ? '<span class="diferencia-ok">✓ Sin diferencia</span>'
-      : cj.diferencia<0
-        ? `<span class="diferencia-neg">▼ Falta ${fmt(Math.abs(cj.diferencia))}</span>`
-        : `<span class="diferencia-ok">▲ Sobra ${fmt(cj.diferencia)}</span>`;
-    const uid = 'caja-'+cj.id;
-    const chid = 'chev-'+cj.id;
-    return `<div class="caja-card">
+  lista.innerHTML = cajasVistas.map(cj=>cajaCardHTML(cj)).join('');
+};
+
+// Template de una caja individual (usado en la lista plana y en el detalle por mes)
+// prefix evita colisiones de id cuando la misma caja se renderiza en más de un lugar a la vez
+function cajaCardHTML(cj, prefix){
+  prefix = prefix || 'caja';
+  const inicial = cj.cajera.trim().charAt(0).toUpperCase();
+  const horario = [cj.horaInicio, cj.horaCierre].filter(Boolean).join(' → ') || 'Sin horario';
+  const difHtml = cj.diferencia===0
+    ? '<span class="diferencia-ok">✓ Sin diferencia</span>'
+    : cj.diferencia<0
+      ? `<span class="diferencia-neg">▼ Falta ${fmt(Math.abs(cj.diferencia))}</span>`
+      : `<span class="diferencia-ok">▲ Sobra ${fmt(cj.diferencia)}</span>`;
+  const uid = prefix+'-'+cj.id;
+  const chid = prefix+'-chev-'+cj.id;
+  return `<div class="caja-card">
       <div class="caja-header" onclick="toggleCajaBody('${uid}','${chid}')">
         <div class="caja-avatar">${inicial}</div>
         <div class="caja-info-main">
@@ -472,7 +489,85 @@ window.renderCajas = function(){
         ${cj.comentario?`<div class="caja-comentario">💬 ${cj.comentario}</div>`:''}
       </div>
     </div>`;
+}
+
+// ── CAJAS AGRUPADAS POR MES (se "cierran" junto con el mes, sin borrar datos) ──
+function cajasDelMes(m){
+  const fin = m.fin || hoy();
+  return cajas.filter(cj => cj.mesId === m.id || (!cj.mesId && cj.fecha>=m.inicio && cj.fecha<=fin));
+}
+
+window.renderCajasMensual = function(){
+  const cont = document.getElementById('lista-cajas-mensual');
+  if(!cont) return;
+  if(!meses.length){
+    cont.innerHTML='<div style="text-align:center;color:var(--text3);padding:2rem;font-size:13px;font-style:italic">Sin meses registrados.</div>';
+    return;
+  }
+  cont.innerHTML=[...meses].reverse().map((m,idx)=>{
+    const mesNum = meses.indexOf(m)+1;
+    const cjMes = cajasDelMes(m);
+    const efec  = cjMes.reduce((a,c)=>a+(c.efectivo||0),0);
+    const pyDeb = cjMes.reduce((a,c)=>a+(c.pyDebito||0),0);
+    const pyEf  = cjMes.reduce((a,c)=>a+(c.pyEfectivo||0),0);
+    const mp    = cjMes.reduce((a,c)=>a+(c.mercadoPago||0),0);
+    const tarj  = cjMes.reduce((a,c)=>a+(c.tarjeta||0),0);
+    const total = cjMes.reduce((a,c)=>a+(c.total||0),0);
+    const dif   = cjMes.reduce((a,c)=>a+(c.diferencia||0),0);
+    const bodyId = 'cjmes-body-'+mesNum, chevId = 'cjmes-chev-'+mesNum, detId = 'cjmes-det-'+mesNum;
+    const cajasOrdenadas = [...cjMes].sort((a,b)=> a.fecha<b.fecha?1:-1 );
+    return `<div class="mes-card">
+      <div class="mes-header" onclick="toggleMes('${bodyId}','${chevId}')">
+        <div class="mes-header-left">
+          <div class="mes-num">${mesNum}</div>
+          <div>
+            <div class="mes-titulo">${m.mes}</div>
+            <div class="mes-subtitulo">${fmtF(m.inicio)} → ${m.fin?fmtF(m.fin):'En curso'} &nbsp;·&nbsp; ${cjMes.length} caja${cjMes.length!==1?'s':''} contabilizada${cjMes.length!==1?'s':''}</div>
+          </div>
+        </div>
+        <div class="mes-header-right">
+          <div style="text-align:right">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Total</div>
+            <div style="font-size:16px;font-weight:700;color:var(--success)">${fmt(total)}</div>
+          </div>
+          <span class="badge ${m.cerrado?'cerrada':'activa'}">${m.cerrado?'Cerrado':'Activo'}</span>
+          <span class="mes-chevron" id="${chevId}">▼</span>
+        </div>
+      </div>
+      <div class="mes-body" id="${bodyId}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:.85rem">
+          <div class="mes-sem-card">
+            <div class="mes-sem-titulo">📊 Resumen</div>
+            <div class="mes-sem-fila"><span>Cajas contabilizadas</span><strong>${cjMes.length}</strong></div>
+            <div class="mes-sem-fila" style="border-top:1px solid var(--border);margin-top:3px;padding-top:3px"><span>Total</span><strong style="color:var(--success)">${fmt(total)}</strong></div>
+          </div>
+          <div class="mes-sem-card">
+            <div class="mes-sem-titulo">💰 Medios de cobro</div>
+            <div class="mes-sem-fila"><span>💵 Efectivo</span><span>${fmt(efec)}</span></div>
+            <div class="mes-sem-fila"><span>🛵 PY Débito</span><span>${fmt(pyDeb)}</span></div>
+            <div class="mes-sem-fila"><span>🛵 PY Efectivo</span><span>${fmt(pyEf)}</span></div>
+            <div class="mes-sem-fila"><span>💙 Mercado Pago</span><span>${fmt(mp)}</span></div>
+            <div class="mes-sem-fila"><span>💳 Tarjeta</span><span>${fmt(tarj)}</span></div>
+          </div>
+          <div class="mes-sem-card">
+            <div class="mes-sem-titulo">⚖️ Diferencia acumulada</div>
+            <div class="mes-sem-fila"><span style="font-weight:600;color:${dif<0?'var(--danger)':dif>0?'var(--warning)':'var(--success)'}">${dif<0?'▼ Falta':dif>0?'▲ Sobra':'✓ Sin diferencia'}</span><strong style="color:${dif<0?'var(--danger)':dif>0?'var(--warning)':'var(--success)'}">${dif>=0?'+':''}${fmt(dif)}</strong></div>
+          </div>
+        </div>
+        <button class="ver-mas-btn" onclick="toggleDetalleCajasMes('${detId}',this)">▶ Ver cajas contabilizadas</button>
+        <div class="detalle-mes" id="${detId}">
+          ${cajasOrdenadas.length ? cajasOrdenadas.map(cj=>cajaCardHTML(cj,'cjmes'+mesNum)).join('') : '<div style="font-size:12px;color:var(--text3);padding:.5rem 0">Sin cajas en este mes.</div>'}
+        </div>
+      </div>
+    </div>`;
   }).join('');
+};
+
+window.toggleDetalleCajasMes = function(detalleId, btn){
+  const det = document.getElementById(detalleId);
+  if(!det) return;
+  det.classList.toggle('open');
+  btn.textContent = det.classList.contains('open') ? '▼ Ocultar cajas' : '▶ Ver cajas contabilizadas';
 };
 
 
@@ -519,11 +614,15 @@ window.guardarEdicionCaja = async function(){
   const total       = efectivo+pyDeb+pyEfec+mp+tarjeta;
   const comentario  = document.getElementById('edit-comentario').value.trim()||null;
   if(!cajera){ alert('Ingresá el nombre de la cajera'); return; }
+  const sem = semanaDelPago(fecha);
+  const mesC = mesDeFecha(fecha);
   await updateDoc(doc(db,'cajas',id),{
     cajera, fecha, fechaCierre,
     horaInicio: hInicio||null, horaCierre: hCierre||null,
     efectivo, pyDebito:pyDeb, pyEfectivo:pyEfec, mercadoPago:mp, tarjeta,
-    total, difTipo, difMonto, diferencia, comentario
+    total, difTipo, difMonto, diferencia, comentario,
+    semanaId: sem?sem.id:null, semanaNum: sem?sem.num:null,
+    mesId: mesC?mesC.id:null, mesNombre: mesC?mesC.mes:null
   });
   cerrarModalEditarCaja();
 };
@@ -1305,6 +1404,9 @@ function render(){
       </div>`;
     }).join('');
   }
+
+  // ── CAJAS POR MES ──
+  renderCajasMensual();
 
   // ── HISTORIAL ──
   renderHistorial();
