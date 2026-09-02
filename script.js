@@ -388,11 +388,16 @@ window.renderCajas = function(){
   const fechaFiltro  = modo==='dia' ? ((fechaEl||{}).value || hoy()) : '';
   const cajeraFiltro = ((document.getElementById('filtro-caja-cajera')||{}).value||'').toLowerCase().trim();
 
+  // Esta vista es solo del mes activo: las cajas de meses ya cerrados quedan
+  // disponibles únicamente dentro de "Cajas por mes", para no duplicarlas ni mezclarlas.
+  const mesActivo = meses.find(m=>!m.cerrado);
+  const cajasMesActivo = mesActivo ? cajasDelMes(mesActivo) : cajas;
+
   // Badge resumen
   const badge = document.getElementById('fecha-cajas-badge');
-  if(badge) badge.textContent = modo==='dia' ? fmtF(fechaFiltro) : 'Todas las cajas';
+  if(badge) badge.textContent = (modo==='dia' ? fmtF(fechaFiltro)+' — ' : '') + (mesActivo ? mesActivo.mes : 'Sin mes activo');
 
-  let cajasVistas = cajas.filter(cj=>{
+  let cajasVistas = cajasMesActivo.filter(cj=>{
     const okFecha   = !fechaFiltro || cj.fecha===fechaFiltro;
     const okCajera  = !cajeraFiltro || cj.cajera.toLowerCase().includes(cajeraFiltro);
     return okFecha && okCajera;
@@ -425,7 +430,9 @@ window.renderCajas = function(){
   if(!lista) return;
 
   if(!cajasVistas.length){
-    lista.innerHTML='<div style="text-align:center;color:var(--text3);padding:2rem;font-style:italic;font-size:13px">Sin cajas registradas para este filtro.</div>';
+    lista.innerHTML='<div style="text-align:center;color:var(--text3);padding:2rem;font-style:italic;font-size:13px">'
+      + (mesActivo ? 'Sin cajas registradas para este filtro en ' + mesActivo.mes + '.' : 'No hay un mes activo. Iniciá uno desde Gestión mensual.')
+      + '</div>';
     return;
   }
 
