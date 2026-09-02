@@ -647,14 +647,22 @@ window.renderHistorial = function(){
   );
   if(tipoFiltro) bFiltradas = bFiltradas.filter(b=>b.tipo===tipoFiltro);
 
-  // Métricas globales del filtro
-  const totCont = bFiltradas.filter(b=>b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
-  const totCte  = bFiltradas.filter(b=>b.tipo==='cte').reduce((a,b)=>a+b.monto,0);
+  // Métricas de arriba: igual que en Cajas, reflejan solo el mes activo (vuelven a
+  // cero al cerrar el mes). El listado de abajo sigue mostrando todo el historial,
+  // agrupado por mes.
+  const mesActivo = meses.find(m=>!m.cerrado);
+  const bFiltradasMesActivo = mesActivo
+    ? bFiltradas.filter(b=>{ const m = mesDeFecha(b.fecha); return m && m.id===mesActivo.id; })
+    : [];
+  const totCont = bFiltradasMesActivo.filter(b=>b.tipo==='contado').reduce((a,b)=>a+b.monto,0);
+  const totCte  = bFiltradasMesActivo.filter(b=>b.tipo==='cte').reduce((a,b)=>a+b.monto,0);
   const setM = (id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  setM('hist-total-n',    bFiltradas.length);
+  setM('hist-total-n',    bFiltradasMesActivo.length);
   setM('hist-total-cont', fmt(totCont));
   setM('hist-total-cte',  fmt(totCte));
   setM('hist-total-gen',  fmt(totCont+totCte));
+  const badgeMes = document.getElementById('hist-mes-badge');
+  if(badgeMes) badgeMes.textContent = mesActivo ? ('Mes activo: '+mesActivo.mes) : 'Sin mes activo';
 
   const lista = document.getElementById('lista-historial');
   if(!lista) return;

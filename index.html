@@ -192,6 +192,7 @@
       <div id="sec-historial" class="section">
         <div class="section-header">
           <h2>Historial de gastos</h2>
+          <span id="hist-mes-badge" class="semana-info"></span>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <input type="text" id="hist-buscar" placeholder="Buscar concepto o empresa..." onkeyup="renderHistorial()" style="height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size:12px;width:220px">
             <select id="hist-tipo" onchange="renderHistorial()" style="height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size:12px;background:var(--surface)">
@@ -203,10 +204,10 @@
           </div>
         </div>
         <div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-bottom:1.25rem">
-          <div class="metric"><div class="metric-label">Total boletas</div><div class="metric-value" id="hist-total-n">0</div></div>
-          <div class="metric"><div class="metric-label">Total contado</div><div class="metric-value red" id="hist-total-cont">$0</div></div>
-          <div class="metric"><div class="metric-label">Total cta. cte.</div><div class="metric-value amber" id="hist-total-cte">$0</div></div>
-          <div class="metric"><div class="metric-label">Total general</div><div class="metric-value" id="hist-total-gen">$0</div></div>
+          <div class="metric"><div class="metric-label">Boletas mes activo</div><div class="metric-value" id="hist-total-n">0</div></div>
+          <div class="metric"><div class="metric-label">Contado mes activo</div><div class="metric-value red" id="hist-total-cont">$0</div></div>
+          <div class="metric"><div class="metric-label">Cta. cte. mes activo</div><div class="metric-value amber" id="hist-total-cte">$0</div></div>
+          <div class="metric"><div class="metric-label">General mes activo</div><div class="metric-value" id="hist-total-gen">$0</div></div>
         </div>
         <div id="lista-historial"></div>
       </div>
