@@ -663,9 +663,29 @@ window.renderHistorial = function(){
     return;
   }
 
+  // Agrupar primero por mes: los meses cerrados quedan encapsulados en su propia
+  // tarjeta, pero al desplegarla se ve el detalle semanal de siempre (no se pierde nada).
+  const gruposMes = {};
+  bFiltradas.forEach(b=>{
+    const m = mesDeFecha(b.fecha);
+    const key = m ? m.id : '__sin_mes__';
+    if(!gruposMes[key]) gruposMes[key] = { mes: m, boletas: [] };
+    gruposMes[key].boletas.push(b);
+  });
+  const mesesOrdenados = Object.values(gruposMes).sort((a,b)=>{
+    if(!a.mes && !b.mes) return 0;
+    if(!a.mes) return 1;
+    if(!b.mes) return -1;
+    return b.mes.inicio.localeCompare(a.mes.inicio);
+  });
+
+  lista.innerHTML = mesesOrdenados.map(gm=>renderHistorialMesCard(gm.mes, gm.boletas)).join('');
+};
+
+function renderHistorialMesCard(m, boletasMes){
   // Agrupar por semana (semanaNum) — sin semana va al grupo "Sin semana asignada"
   const grupos = {};
-  bFiltradas.forEach(b=>{
+  boletasMes.forEach(b=>{
     const key = b.semanaId || '__sin_semana__';
     if(!grupos[key]) grupos[key] = { semanaNum: b.semanaNum||null, semanaId: b.semanaId||null, boletas: [] };
     grupos[key].boletas.push(b);
@@ -679,14 +699,21 @@ window.renderHistorial = function(){
     return b.semanaNum - a.semanaNum;
   });
 
-  lista.innerHTML = gruposOrdenados.map(g=>{
+  const mesKey = m ? m.id : 'sinmes';
+  const totMes = boletasMes.reduce((a,b)=>a+b.monto,0);
+  const uidMes  = 'histmes-body-'+mesKey;
+  const chidMes = 'histmes-chev-'+mesKey;
+  const tituloMes = m ? m.mes : 'Sin mes asignado';
+  const subtituloMes = m ? (fmtF(m.inicio)+' → '+(m.fin?fmtF(m.fin):'En curso')) : '';
+
+  const semanasHTML = gruposOrdenados.map(g=>{
     const sem = g.semanaId ? semanas.find(s=>s.id===g.semanaId) : null;
     const titulo = sem ? `Semana ${sem.num}` : 'Sin semana asignada';
     const subtitulo = sem ? `${fmtF(sem.inicio)} → ${sem.fin?fmtF(sem.fin):'En curso'}` : '';
     const bOrdenadas = [...g.boletas].sort((a,b)=>((b.fechaHora||b.fecha)>(a.fechaHora||a.fecha)?1:-1));
     const totGrupo = bOrdenadas.reduce((a,b)=>a+b.monto,0);
-    const uid = 'hist-body-'+(g.semanaId||'sin');
-    const chid = 'hist-chev-'+(g.semanaId||'sin');
+    const uid = 'hist-body-'+(g.semanaId||('sin-'+mesKey));
+    const chid = 'hist-chev-'+(g.semanaId||('sin-'+mesKey));
     const h = hoy();
 
     const filas = bOrdenadas.map(b=>{
@@ -745,7 +772,30 @@ window.renderHistorial = function(){
       </div>
     </div>`;
   }).join('');
-};
+
+  return `<div class="mes-card" style="margin-bottom:.75rem">
+    <div class="mes-header" onclick="toggleMes('${uidMes}','${chidMes}')">
+      <div class="mes-header-left">
+        <div class="mes-num" style="background:${m&&m.cerrado?'var(--text3)':'var(--accent)'}">${m?meses.indexOf(m)+1:'—'}</div>
+        <div>
+          <div class="mes-titulo">${tituloMes}</div>
+          ${subtituloMes?'<div class="mes-subtitulo">'+subtituloMes+'</div>':''}
+        </div>
+      </div>
+      <div class="mes-header-right">
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Total egresado</div>
+          <div style="font-size:16px;font-weight:700;color:var(--danger)">${fmt(totMes)}</div>
+        </div>
+        <span class="badge ${m?(m.cerrado?'cerrada':'activa'):'cerrada'}">${boletasMes.length} boleta${boletasMes.length!==1?'s':''}</span>
+        <span class="mes-chevron" id="${chidMes}">▼</span>
+      </div>
+    </div>
+    <div class="mes-body" id="${uidMes}">
+      ${semanasHTML}
+    </div>
+  </div>`;
+}
 
 // ── EDITAR BOLETA ──
 window.abrirEditarBoleta = function(id){
