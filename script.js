@@ -23,19 +23,37 @@ const db    = getFirestore(fbApp);
 
 let boletas = [], semanas = [], meses = [], empresas = [], recargas = [], cajas = [], liquidaciones = [];
 let pagoCtePendienteId = null;
-let unsubBoletas, unsubSemanas, unsubMeses, unsubEmpresas, unsubRecargas, unsubCajas, unsubLiq;
+let unsubBoletas, unsubSemanas, unsubMeses, unsubEmpresas, unsubRecargas, unsubCajas, unsubLiq, unsubSesion;
 
 // ── AUTH ──
+const CODIGO_CIERRE_TOTAL = '3721';
+const IDLE_LIMIT_MS = 20*60*1000; // 20 minutos de inactividad
+let sessionStartMs = null;
+let idleTimer = null;
+
+function resetIdleTimer(){
+  if(idleTimer) clearTimeout(idleTimer);
+  if(auth.currentUser){
+    idleTimer = setTimeout(()=>{ signOut(auth); }, IDLE_LIMIT_MS);
+  }
+}
+['mousemove','keydown','click','scroll','touchstart'].forEach(evt=>{
+  document.addEventListener(evt, resetIdleTimer, {passive:true});
+});
+
 onAuthStateChanged(auth, user => {
   if(user){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app-screen').style.display='flex';
     document.getElementById('user-email-badge').textContent = user.email;
+    sessionStartMs = Date.now();
+    resetIdleTimer();
     iniciarListeners();
   } else {
     document.getElementById('login-screen').style.display='flex';
     document.getElementById('app-screen').style.display='none';
-    [unsubBoletas,unsubSemanas,unsubMeses,unsubEmpresas,unsubRecargas,unsubCajas,unsubLiq].forEach(u=>u&&u());
+    if(idleTimer) clearTimeout(idleTimer);
+    [unsubBoletas,unsubSemanas,unsubMeses,unsubEmpresas,unsubRecargas,unsubCajas,unsubLiq,unsubSesion].forEach(u=>u&&u());
   }
 });
 
@@ -49,6 +67,17 @@ window.doLogin = async function(){
   catch(e){ err.style.display='block'; btn.textContent='Ingresar'; btn.disabled=false; }
 };
 window.doLogout = () => signOut(auth);
+
+window.cerrarSesionTodos = async function(){
+  const codigo = prompt('Para cerrar la sesión en TODOS los dispositivos, ingresá el código de seguridad:');
+  if(codigo === null) return;
+  if(codigo.trim() !== CODIGO_CIERRE_TOTAL){ alert('Código incorrecto.'); return; }
+  try{
+    await setDoc(doc(db,'config','sesion'), { logoutAllAt: Date.now() });
+  }catch(e){
+    alert('No se pudo cerrar la sesión en los demás dispositivos.');
+  }
+};
 
 // ── LISTENERS ──
 function iniciarListeners(){
@@ -80,6 +109,12 @@ function iniciarListeners(){
   unsubLiq = onSnapshot(query(collection(db,'liquidaciones'),orderBy('fechaInicio','desc')), snap=>{
     liquidaciones = snap.docs.map(d=>({id:d.id,...d.data()}));
     renderLiquidaciones();
+  });
+  unsubSesion = onSnapshot(doc(db,'config','sesion'), snap=>{
+    const data = snap.data();
+    if(data && data.logoutAllAt && sessionStartMs && data.logoutAllAt > sessionStartMs){
+      signOut(auth);
+    }
   });
 }
 
