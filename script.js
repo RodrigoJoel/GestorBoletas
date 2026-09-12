@@ -22,7 +22,8 @@ const db    = getFirestore(fbApp);
 
 
 let boletas = [], semanas = [], meses = [], empresas = [], recargas = [], cajas = [], liquidaciones = [];
-let pagoCtePendienteId = null;
+let pagoCteIds = [];
+let cteSeleccionadas = new Set();
 let unsubBoletas, unsubSemanas, unsubMeses, unsubEmpresas, unsubRecargas, unsubCajas, unsubLiq, unsubSesion;
 
 // ── AUTH ──
@@ -211,30 +212,62 @@ window.eliminarBoleta = async function(id){
 };
 
 window.abrirModalPago = function(id){
-  pagoCtePendienteId = id;
+  pagoCteIds = [id];
   document.getElementById('modal-fecha-pago').value = hoy();
+  document.getElementById('modal-medio-pago').value = 'Efectivo';
+  document.getElementById('modal-pago-titulo').textContent = 'Registrar pago de cuenta corriente';
+  document.getElementById('modal-pago').classList.add('open');
+};
+window.abrirModalPagoMultiple = function(){
+  if(!cteSeleccionadas.size) return;
+  pagoCteIds = [...cteSeleccionadas];
+  document.getElementById('modal-fecha-pago').value = hoy();
+  document.getElementById('modal-medio-pago').value = 'Efectivo';
+  document.getElementById('modal-pago-titulo').textContent = `Registrar pago de ${pagoCteIds.length} boletas`;
   document.getElementById('modal-pago').classList.add('open');
 };
 window.cerrarModal = function(){
   document.getElementById('modal-pago').classList.remove('open');
-  pagoCtePendienteId = null;
+  pagoCteIds = [];
 };
 window.confirmarPago = async function(){
-  if(!pagoCtePendienteId) return;
+  if(!pagoCteIds.length) return;
   const fecha = document.getElementById('modal-fecha-pago').value;
   const medio = document.getElementById('modal-medio-pago').value;
   if(!fecha){ alert('Seleccioná la fecha de pago'); return; }
   // Determinar a qué semana pertenece el pago
   const semPago = semanaDelPago(fecha);
-  await updateDoc(doc(db,'boletas',pagoCtePendienteId),{
+  const ids = pagoCteIds;
+  await Promise.all(ids.map(id=>updateDoc(doc(db,'boletas',id),{
     pagadaCte: true,
     fechaPagoCte: fecha,
     medioPagoCte: medio,
     semanaIdPago: semPago ? semPago.id : null,
     semanaNumPago: semPago ? semPago.num : null
-  });
+  })));
+  ids.forEach(id=>cteSeleccionadas.delete(id));
   cerrarModal();
 };
+
+window.toggleCteSeleccion = function(id, checked){
+  if(checked) cteSeleccionadas.add(id); else cteSeleccionadas.delete(id);
+  actualizarSeleccionCte();
+};
+window.toggleAllCte = function(chk){
+  const ids = boletas.filter(b=>b.tipo==='cte'&&!b.pagadaCte).map(b=>b.id);
+  if(chk.checked) ids.forEach(id=>cteSeleccionadas.add(id));
+  else ids.forEach(id=>cteSeleccionadas.delete(id));
+  render();
+};
+function actualizarSeleccionCte(){
+  const bar = document.getElementById('cte-seleccion-bar');
+  if(!bar) return;
+  const sel = boletas.filter(b=>cteSeleccionadas.has(b.id));
+  if(!sel.length){ bar.style.display='none'; return; }
+  bar.style.display='flex';
+  document.getElementById('cte-sel-count').textContent = sel.length;
+  document.getElementById('cte-sel-total').textContent = fmt(sel.reduce((a,b)=>a+b.monto,0));
+}
 
 // ── SEMANAS ──
 async function _crearSemana(){
@@ -1520,11 +1553,15 @@ function render(){
   document.getElementById('m-cte-tot').textContent=fmt(ctePend.reduce((a,b)=>a+b.monto,0));
   document.getElementById('m-cte-venc').textContent=cteVenc.length;
   document.getElementById('m-cte-pag').textContent=fmt(ctePagArr.reduce((a,b)=>a+b.monto,0));
+  // Limpiar selección de boletas que ya no son cta cte pendientes
+  const ctePendIds = new Set(ctePend.map(b=>b.id));
+  [...cteSeleccionadas].forEach(id=>{ if(!ctePendIds.has(id)) cteSeleccionadas.delete(id); });
   const tbC=document.getElementById('tbl-cte');
-  if(!ctes.length) tbC.innerHTML='<tr class="empty-row"><td colspan="11">Sin boletas en cuenta corriente</td></tr>';
+  if(!ctes.length) tbC.innerHTML='<tr class="empty-row"><td colspan="12">Sin boletas en cuenta corriente</td></tr>';
   else tbC.innerHTML=[...ctes].sort((a,b)=>(a.pagadaCte?1:-1)||(a.fechaCte>b.fechaCte?1:-1)).map(b=>{
     const venc = b.fechaCte&&!b.pagadaCte&&b.fechaCte<h;
     return `<tr style="${venc?'background:var(--danger-bg)':''}">
+      <td>${!b.pagadaCte?`<input type="checkbox" class="cte-check" ${cteSeleccionadas.has(b.id)?'checked':''} onchange="toggleCteSeleccion('${b.id}', this.checked)">`:''}</td>
       <td style="font-size:12px;color:var(--text3);white-space:nowrap">${fmtFH(b.fechaHora)}</td>
       <td><strong>${b.proveedor}</strong></td>
       <td>${b.empresa||'—'}</td>
@@ -1542,6 +1579,13 @@ function render(){
       </div></td>
     </tr>`;
   }).join('');
+  const chkAll = document.getElementById('cte-check-all');
+  if(chkAll){
+    const pendIds = ctePend.map(b=>b.id);
+    chkAll.checked = pendIds.length>0 && pendIds.every(id=>cteSeleccionadas.has(id));
+    chkAll.indeterminate = !chkAll.checked && pendIds.some(id=>cteSeleccionadas.has(id));
+  }
+  actualizarSeleccionCte();
 }
 
 function renderEmpresas(){

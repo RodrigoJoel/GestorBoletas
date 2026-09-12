@@ -301,10 +301,16 @@
           </div>
         </div>
         <div class="card">
-          <div class="card-title">Boletas en cuenta corriente</div>
+          <div class="card-title">
+            <span>Boletas en cuenta corriente</span>
+            <div id="cte-seleccion-bar" style="display:none;align-items:center;gap:10px;font-size:13px;font-weight:400;color:var(--text2)">
+              <span><strong id="cte-sel-count">0</strong> seleccionadas — Total: <strong id="cte-sel-total">$0</strong></span>
+              <button class="btn-sm success" onclick="abrirModalPagoMultiple()">✓ Pagar seleccionadas</button>
+            </div>
+          </div>
           <div class="tbl-wrap">
             <table>
-              <thead><tr><th>Cargada</th><th>Concepto</th><th>Empresa</th><th>Categoría</th><th>Monto</th><th>Vencimiento</th><th>Estado</th><th>Pagada el</th><th>Medio pago</th><th>Semana pago</th><th></th></tr></thead>
+              <thead><tr><th style="width:28px"><input type="checkbox" id="cte-check-all" onclick="toggleAllCte(this)" title="Seleccionar todas las pendientes"></th><th>Cargada</th><th>Concepto</th><th>Empresa</th><th>Categoría</th><th>Monto</th><th>Vencimiento</th><th>Estado</th><th>Pagada el</th><th>Medio pago</th><th>Semana pago</th><th></th></tr></thead>
               <tbody id="tbl-cte"></tbody>
             </table>
           </div>
@@ -489,7 +495,7 @@
 <!-- Modal pago cte -->
 <div class="modal-overlay" id="modal-pago">
   <div class="modal">
-    <h3>Registrar pago de cuenta corriente</h3>
+    <h3 id="modal-pago-titulo">Registrar pago de cuenta corriente</h3>
     <div class="field">
       <label>Fecha de pago</label>
       <input type="date" id="modal-fecha-pago">
