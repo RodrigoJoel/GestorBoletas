@@ -1440,7 +1440,8 @@ function render(){
       const cats = {};
       [...bMes,...cteMes].forEach(b=>{
         const k = b.categoria||'Sin categoría';
-        if(!cats[k]) cats[k]={cont:0,cte:0,total:0};
+        if(!cats[k]) cats[k]={cont:0,cte:0,total:0,items:[]};
+        cats[k].items.push(b);
         if(b.tipo==='contado') cats[k].cont+=b.monto;
         else cats[k].cte+=b.monto;
         cats[k].total+=b.monto;
@@ -1450,7 +1451,8 @@ function render(){
       const emps = {};
       [...bMes,...cteMes].forEach(b=>{
         const k = b.empresa||'Sin empresa';
-        if(!emps[k]) emps[k]={cont:0,cte:0,total:0};
+        if(!emps[k]) emps[k]={cont:0,cte:0,total:0,items:[]};
+        emps[k].items.push(b);
         if(b.tipo==='contado') emps[k].cont+=b.monto;
         else emps[k].cte+=b.monto;
         emps[k].total+=b.monto;
@@ -1479,10 +1481,25 @@ function render(){
         </div>`;
       }).join('') : '<p style="font-size:12px;color:var(--text3)">Sin semanas en este mes.</p>';
 
-      const catRows = Object.entries(cats).sort((a,b)=>b[1].total-a[1].total)
-        .map(([k,v])=>`<div class="mes-sem-fila"><span>${k}</span><strong>${fmt(v.total)}</strong></div>`).join('');
-      const empRows = Object.entries(emps).sort((a,b)=>b[1].total-a[1].total)
-        .map(([k,v])=>`<div class="mes-sem-fila"><span>${k}</span><strong>${fmt(v.total)}</strong></div>`).join('');
+      const grupoRows = obj => Object.entries(obj).sort((a,b)=>b[1].total-a[1].total).map(([k,v])=>{
+        const filas = [...v.items].sort((a,b)=>{
+          const fa = a.tipo==='cte'?a.fechaPagoCte:a.fecha, fb = b.tipo==='cte'?b.fechaPagoCte:b.fecha;
+          return fa>fb?1:-1;
+        }).map(b=>{
+          const esCte = b.tipo==='cte';
+          return `<div class="mes-sem-fila" style="font-size:12px;gap:8px">
+            <span style="color:var(--text3);white-space:nowrap">${fmtF(esCte?b.fechaPagoCte:b.fecha)}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${b.proveedor} <span class="badge ${esCte?'cte':'contado'}">${esCte?'Cta. Cte.':'Contado'}</span></span>
+            <span>${fmt(b.monto)}</span>
+          </div>`;
+        }).join('');
+        return `<details style="margin-bottom:2px">
+          <summary class="mes-sem-fila" style="cursor:pointer"><span>▸ ${k} <span style="font-size:11px;color:var(--text3)">(${v.items.length})</span></span><strong>${fmt(v.total)}</strong></summary>
+          <div style="padding:4px 0 8px 12px;border-left:2px solid var(--border);margin:2px 0 4px 4px">${filas}</div>
+        </details>`;
+      }).join('');
+      const catRows = grupoRows(cats);
+      const empRows = grupoRows(emps);
 
       return `<div class="mes-card">
         <div class="mes-header" onclick="toggleMes('mes-body-${mesNum}','chevron-${mesNum}')">
