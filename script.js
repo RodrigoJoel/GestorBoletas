@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
-  onSnapshot, query, orderBy, setDoc }
+  onSnapshot, query, orderBy, setDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -24,6 +24,7 @@ const db    = getFirestore(fbApp);
 let boletas = [], semanas = [], meses = [], empresas = [], recargas = [], cajas = [], liquidaciones = [];
 let pagoCteIds = [];
 let cteSeleccionadas = new Set();
+let editQuitarFoto = false;
 let unsubBoletas, unsubSemanas, unsubMeses, unsubEmpresas, unsubRecargas, unsubCajas, unsubLiq, unsubSesion;
 
 // ── AUTH ──
@@ -171,6 +172,45 @@ window.toggleCamposCarga = function(){
   document.getElementById('field-medio-pago').style.display = esCte?'none':'block';
 };
 
+// ── FOTOS ──
+function comprimirImagen(file){
+  return new Promise((resolve,reject)=>{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      URL.revokeObjectURL(url);
+      const esc = Math.min(1, 1280/Math.max(img.width,img.height));
+      const w = Math.round(img.width*esc), h = Math.round(img.height*esc);
+      const c = document.createElement('canvas'); c.width=w; c.height=h;
+      const ctx = c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+      let q = 0.75, data = c.toDataURL('image/jpeg',q);
+      while(data.length>900000 && q>0.3){ q-=0.1; data=c.toDataURL('image/jpeg',q); }
+      data.length>900000 ? reject(new Error('grande')) : resolve(data);
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error('img')); };
+    img.src = url;
+  });
+}
+async function leerFotoInput(inputId){
+  const f = document.getElementById(inputId).files[0];
+  if(!f) return null;
+  try{ return await comprimirImagen(f); }
+  catch(e){ alert('No se pudo procesar la foto. Probá con otra imagen.'); return undefined; }
+}
+window.verFoto = async function(id){
+  const img = document.getElementById('foto-visor-img');
+  img.removeAttribute('src');
+  document.getElementById('foto-visor-msg').textContent = 'Cargando...';
+  document.getElementById('modal-foto').classList.add('open');
+  try{
+    const snap = await getDoc(doc(db,'fotos',id));
+    if(snap.exists()){ img.src = snap.data().data; document.getElementById('foto-visor-msg').textContent=''; }
+    else document.getElementById('foto-visor-msg').textContent = 'No se encontró la foto.';
+  }catch(e){ document.getElementById('foto-visor-msg').textContent = 'No se pudo cargar la foto.'; }
+};
+window.cerrarFoto = function(){ document.getElementById('modal-foto').classList.remove('open'); };
+const btnFoto = b => b.tieneFoto ? `<button class="btn-sm" title="Ver foto" onclick="verFoto('${b.id}')">📷</button>` : '';
+
 // ── BOLETAS ──
 window.agregarBoleta = async function(){
   const sem = semanaActiva();
@@ -187,16 +227,24 @@ window.agregarBoleta = async function(){
   if(!empresa){ alert('Seleccioná una empresa'); return; }
   if(!monto)  { alert('Ingresá un monto válido'); return; }
   if(tipo==='cte'&&!fechaCte){ alert('Ingresá la fecha de vencimiento'); return; }
+  const foto = await leerFotoInput('inp-foto');
+  if(foto===undefined) return;
   const ahora = new Date().toISOString();
-  await addDoc(collection(db,'boletas'),{
+  const ref = await addDoc(collection(db,'boletas'),{
     fecha: fechaBoleta, fechaHora: ahora,
     semanaId: sem?sem.id:null, semanaNum: sem?sem.num:null,
     proveedor: prov, empresa, categoria: cat,
     monto, tipo, medio: medio||null,
     fechaCte: fechaCte||null,
     pagadaCte: false, fechaPagoCte: null, medioPagoCte: null,
-    semanaIdPago: null, semanaNumPago: null
+    semanaIdPago: null, semanaNumPago: null,
+    tieneFoto: !!foto
   });
+  if(foto){
+    try{ await setDoc(doc(db,'fotos',ref.id),{data:foto,fecha:ahora}); }
+    catch(e){ await updateDoc(ref,{tieneFoto:false}); alert('La boleta se guardó pero no se pudo subir la foto.'); }
+  }
+  document.getElementById('inp-foto').value='';
   document.getElementById('inp-prov').value='';
   document.getElementById('inp-monto').value='';
   document.getElementById('inp-fecha-cte').value='';
@@ -208,7 +256,9 @@ window.agregarBoleta = async function(){
 
 window.eliminarBoleta = async function(id){
   if(!confirm('¿Eliminar esta boleta?')) return;
+  const b = boletas.find(x=>x.id===id);
   await deleteDoc(doc(db,'boletas',id));
+  if(b && b.tieneFoto) deleteDoc(doc(db,'fotos',id)).catch(()=>{});
 };
 
 window.abrirModalPago = function(id){
@@ -814,6 +864,7 @@ function renderHistorialMesCard(m, boletasMes){
         + '<td style="font-size:11px;color:var(--text3)">' + (b.fechaCte ? fmtF(b.fechaCte) : '—') + '</td>'
         + '<td><div class="row-actions">'
         + pagarBtn
+        + btnFoto(b)
         + '<button class="btn-sm" onclick="abrirEditarBoleta(\'' + b.id + '\')">✏</button>'
         + '<button class="icon-btn danger" onclick="eliminarBoleta(\'' + b.id + '\')">✕</button>'
         + '</div></td>'
@@ -894,6 +945,13 @@ window.abrirEditarBoleta = function(id){
   const selMed = document.getElementById('edit-boleta-medio');
   selMed.value = b.medio||'Efectivo';
   toggleEditMedio();
+  editQuitarFoto = false;
+  document.getElementById('edit-boleta-foto').value = '';
+  document.getElementById('edit-foto-actual').style.display = b.tieneFoto ? 'flex' : 'none';
+  document.getElementById('edit-foto-ver').onclick = ()=>verFoto(id);
+  const qb = document.getElementById('edit-foto-quitar');
+  qb.textContent = 'Quitar foto';
+  qb.onclick = ()=>{ editQuitarFoto = !editQuitarFoto; qb.textContent = editQuitarFoto ? 'Se quitará al guardar (deshacer)' : 'Quitar foto'; };
   document.getElementById('modal-editar-boleta').classList.add('open');
 };
 
@@ -930,6 +988,8 @@ window.guardarEdicionBoleta = async function(){
   if(!monto)  { alert('Ingresá un monto válido'); return; }
   if(tipo==='cte'&&!fechaCte){ alert('Ingresá la fecha de vencimiento'); return; }
   if(tipo==='cte'&&pagada&&!fechaPago){ alert('Ingresá la fecha de pago'); return; }
+  const fotoNueva = await leerFotoInput('edit-boleta-foto');
+  if(fotoNueva===undefined) return;
   const sem = semanaDelPago(fecha);
   const datos = {
     proveedor:prov, empresa, categoria:cat,
@@ -942,6 +1002,12 @@ window.guardarEdicionBoleta = async function(){
     datos.fechaPagoCte = fechaPago;
     datos.semanaIdPago = semPago?semPago.id:null;
     datos.semanaNumPago = semPago?semPago.num:null;
+  }
+  if(fotoNueva){
+    try{ await setDoc(doc(db,'fotos',id),{data:fotoNueva,fecha:new Date().toISOString()}); datos.tieneFoto = true; }
+    catch(e){ alert('No se pudo subir la foto nueva.'); }
+  } else if(editQuitarFoto){
+    try{ await deleteDoc(doc(db,'fotos',id)); datos.tieneFoto = false; }catch(e){}
   }
   await updateDoc(doc(db,'boletas',id), datos);
   cerrarModalEditarBoleta();
@@ -1293,6 +1359,7 @@ function render(){
         <td style="font-size:11px;color:var(--text3)">${esPendAnterior?'Vence: '+fmtF(b.fechaCte):''}</td>
         <td><div class="row-actions">
           ${b.tipo==='cte'&&!b.pagadaCte?`<button class="btn-sm success" onclick="abrirModalPago('${b.id}')">✓ Pagar</button>`:''}
+          ${btnFoto(b)}
           <button class="btn-sm" onclick="abrirEditarBoleta('${b.id}')">✏</button>
           <button class="icon-btn danger" onclick="eliminarBoleta('${b.id}')">✕</button>
         </div></td>
@@ -1591,6 +1658,7 @@ function render(){
       <td style="font-size:12px">${b.semanaNumPago?'Sem. '+b.semanaNumPago:'—'}</td>
       <td><div class="row-actions">
         ${!b.pagadaCte?`<button class="btn-sm success" onclick="abrirModalPago('${b.id}')">✓ Pagar</button>`:''}
+        ${btnFoto(b)}
         <button class="btn-sm" onclick="abrirEditarBoleta('${b.id}')">✏</button>
         <button class="icon-btn danger" onclick="eliminarBoleta('${b.id}')">✕</button>
       </div></td>
@@ -1637,7 +1705,7 @@ window.exportarExcel = function(){
   const wb=XLSX.utils.book_new();
 
   // Hoja 1: Detalle
-  const det=[['Fecha','Hora','Semana carga','Concepto','Empresa','Categoría','Tipo','Medio pago','Monto','Estado','Vencimiento','Fecha pago','Medio pago cte.','Semana pago']];
+  const det=[['Fecha','Hora','Semana carga','Concepto','Empresa','Categoría','Tipo','Medio pago','Monto','Estado','Vencimiento','Fecha pago','Medio pago cte.','Semana pago','Foto']];
   [...boletas].sort((a,b)=>(a.fechaHora||a.fecha)>(b.fechaHora||b.fecha)?1:-1).forEach(b=>{
     const hora=b.fechaHora?new Date(b.fechaHora).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'';
     det.push([
@@ -1648,7 +1716,8 @@ window.exportarExcel = function(){
       b.monto,
       b.tipo==='contado'?'Pagada':b.pagadaCte?'Pagada':'Pendiente',
       b.fechaCte||'', b.fechaPagoCte||'', b.medioPagoCte||'',
-      b.semanaNumPago?'Sem. '+b.semanaNumPago:''
+      b.semanaNumPago?'Sem. '+b.semanaNumPago:'',
+      b.tieneFoto?'Sí':'No'
     ]);
   });
   const ws1=XLSX.utils.aoa_to_sheet(det);

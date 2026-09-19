@@ -168,6 +168,10 @@
                 <label>Fecha de vencimiento</label>
                 <input type="date" id="inp-fecha-cte">
               </div>
+              <div class="field">
+                <label>📷 Foto de la boleta (opcional)</label>
+                <input type="file" id="inp-foto" accept="image/*">
+              </div>
               <div class="field" style="display:flex;align-items:flex-end">
                 <button class="btn primary full" onclick="agregarBoleta()">+ Agregar boleta</button>
               </div>
@@ -586,11 +590,27 @@
       </div>
       <div class="field" id="edit-field-fecha-cte"><label>Fecha vencimiento</label><input type="date" id="edit-boleta-fecha-cte"></div>
       <div class="field" id="edit-field-fecha-pago"><label>Fecha de pago</label><input type="date" id="edit-boleta-fecha-pago"></div>
+      <div class="field" style="grid-column:1/-1"><label>📷 Foto de la boleta</label>
+        <div id="edit-foto-actual" style="display:none;gap:8px;margin-bottom:6px">
+          <button type="button" class="btn-sm" id="edit-foto-ver">Ver foto actual</button>
+          <button type="button" class="btn-sm danger" id="edit-foto-quitar">Quitar foto</button>
+        </div>
+        <input type="file" id="edit-boleta-foto" accept="image/*">
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn" onclick="cerrarModalEditarBoleta()">Cancelar</button>
       <button class="btn primary" onclick="guardarEdicionBoleta()">Guardar cambios</button>
     </div>
+  </div>
+</div>
+
+<!-- Visor de foto -->
+<div class="modal-overlay" id="modal-foto" onclick="cerrarFoto()">
+  <div class="modal" style="max-width:720px;text-align:center" onclick="event.stopPropagation()">
+    <div id="foto-visor-msg" style="font-size:13px;color:var(--text3)"></div>
+    <img id="foto-visor-img" alt="Foto de la boleta" style="max-width:100%;max-height:75vh;border-radius:8px">
+    <div class="modal-actions"><button class="btn" onclick="cerrarFoto()">Cerrar</button></div>
   </div>
 </div>
 
