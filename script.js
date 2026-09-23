@@ -138,8 +138,12 @@ function semanaActiva(){ return semanas.find(s=>!s.cerrada)||null; }
 // Determina a qué semana pertenece un pago de cta cte (por fecha de pago)
 function semanaDelPago(fechaPago){
   if(!fechaPago) return null;
-  // Buscamos la semana cuyo rango contiene la fecha de pago
-  for(const s of semanas){
+  // Buscamos la semana cuyo rango contiene la fecha de pago. Recorremos de la
+  // más nueva a la más vieja: el día que se cierra una semana y se abre otra,
+  // ambas pueden incluir esa fecha en su rango (fin de una = inicio de la
+  // siguiente), y en ese caso el pago debe quedar en la semana nueva.
+  for(let i=semanas.length-1;i>=0;i--){
+    const s = semanas[i];
     const desde = s.inicio;
     const hasta = s.fin || hoy();
     if(fechaPago >= desde && fechaPago <= hasta) return s;
@@ -150,7 +154,10 @@ function semanaDelPago(fechaPago){
 // Determina a qué mes pertenece una fecha (por rango inicio/fin)
 function mesDeFecha(fecha){
   if(!fecha) return null;
-  for(const m of meses){
+  // Mismo criterio que semanaDelPago: ante un empate en el límite entre dos
+  // meses, se prioriza el más nuevo.
+  for(let i=meses.length-1;i>=0;i--){
+    const m = meses[i];
     const desde = m.inicio;
     const hasta = m.fin || hoy();
     if(fecha >= desde && fecha <= hasta) return m;
