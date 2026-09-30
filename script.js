@@ -25,6 +25,8 @@ let boletas = [], semanas = [], meses = [], empresas = [], recargas = [], cajas 
 let pagoCteIds = [];
 let cteSeleccionadas = new Set();
 let editQuitarFoto = false;
+let grupoActivo = null; // lote de boletas del mismo proveedor cargándose juntas: {id, proveedor, empresa, count, total}
+let ultimoAgregado = null; // última boleta cargada (fuera de un lote), por si el usuario quiere convertirla en el inicio de uno
 let unsubBoletas, unsubSemanas, unsubMeses, unsubEmpresas, unsubRecargas, unsubCajas, unsubLiq, unsubSesion;
 
 // ── AUTH ──
@@ -236,6 +238,10 @@ window.agregarBoleta = async function(){
   if(tipo==='cte'&&!fechaCte){ alert('Ingresá la fecha de vencimiento'); return; }
   const foto = await leerFotoInput('inp-foto');
   if(foto===undefined) return;
+
+  // Si había un lote activo pero cambiaron proveedor o empresa, ese lote queda cerrado
+  if(grupoActivo && (grupoActivo.proveedor!==prov || grupoActivo.empresa!==empresa)) grupoActivo = null;
+
   const ahora = new Date().toISOString();
   const ref = await addDoc(collection(db,'boletas'),{
     fecha: fechaBoleta, fechaHora: ahora,
@@ -245,13 +251,80 @@ window.agregarBoleta = async function(){
     fechaCte: fechaCte||null,
     pagadaCte: false, fechaPagoCte: null, medioPagoCte: null,
     semanaIdPago: null, semanaNumPago: null,
-    tieneFoto: !!foto
+    tieneFoto: !!foto,
+    grupoId: grupoActivo ? grupoActivo.id : null
   });
   if(foto){
     try{ await setDoc(doc(db,'fotos',ref.id),{data:foto,fecha:ahora}); }
     catch(e){ await updateDoc(ref,{tieneFoto:false}); alert('La boleta se guardó pero no se pudo subir la foto.'); }
   }
+
   document.getElementById('inp-foto').value='';
+  document.getElementById('inp-fecha-cte').value='';
+
+  if(grupoActivo){
+    // Ya estamos cargando un lote: sumamos esta boleta y dejamos el resto del form listo para la próxima
+    grupoActivo.count++;
+    grupoActivo.total += monto;
+    document.getElementById('inp-monto').value='';
+    document.getElementById('inp-monto').focus();
+    mostrarResumenLote();
+  } else {
+    // Boleta suelta: ofrecemos convertirla en el inicio de un lote del mismo proveedor
+    ultimoAgregado = {id: ref.id, proveedor: prov, empresa, categoria: cat, tipo, medio, monto};
+    document.getElementById('inp-prov').value='';
+    document.getElementById('inp-monto').value='';
+    document.getElementById('inp-fecha-boleta').value='';
+    document.getElementById('inp-tipo').value='contado';
+    document.getElementById('field-fecha-cte').style.display='none';
+    document.getElementById('field-medio-pago').style.display='block';
+    mostrarPromptLote(ultimoAgregado);
+  }
+};
+
+function mostrarPromptLote(info){
+  const el = document.getElementById('banner-lote');
+  if(!el) return;
+  el.style.display='flex';
+  el.className='alert info';
+  el.innerHTML = `<span>✓ Boleta cargada: <strong>${info.proveedor}</strong> ${fmt(info.monto)}. ¿Agregás otra boleta del mismo proveedor (${info.empresa})?</span>
+    <div style="display:flex;gap:6px;margin-left:auto">
+      <button class="btn-sm primary" onclick="iniciarLote()">+ Sí, agregar otra</button>
+      <button class="btn-sm" onclick="ocultarBannerLote()">No, listo</button>
+    </div>`;
+}
+function mostrarResumenLote(){
+  const el = document.getElementById('banner-lote');
+  if(!el || !grupoActivo) return;
+  el.style.display='flex';
+  el.className='alert info';
+  el.innerHTML = `<span>🔗 Cargando boletas de <strong>${grupoActivo.proveedor}</strong> (${grupoActivo.empresa}) — ${grupoActivo.count} boleta${grupoActivo.count!==1?'s':''}, total <strong>${fmt(grupoActivo.total)}</strong></span>
+    <button class="btn-sm danger" style="margin-left:auto" onclick="terminarLote()">Terminar lote</button>`;
+}
+window.ocultarBannerLote = function(){
+  const el = document.getElementById('banner-lote');
+  if(el){ el.style.display='none'; el.innerHTML=''; }
+  ultimoAgregado = null;
+};
+window.iniciarLote = async function(){
+  if(!ultimoAgregado) return;
+  await updateDoc(doc(db,'boletas',ultimoAgregado.id),{grupoId: ultimoAgregado.id});
+  grupoActivo = {id: ultimoAgregado.id, proveedor: ultimoAgregado.proveedor, empresa: ultimoAgregado.empresa, count:1, total: ultimoAgregado.monto};
+  // Repoblamos el formulario con los mismos datos del proveedor para agilizar la carga de las próximas boletas
+  document.getElementById('inp-prov').value = ultimoAgregado.proveedor;
+  document.getElementById('inp-empresa').value = ultimoAgregado.empresa;
+  document.getElementById('inp-cat').value = ultimoAgregado.categoria||'';
+  document.getElementById('inp-tipo').value = ultimoAgregado.tipo;
+  toggleCamposCarga();
+  if(ultimoAgregado.tipo==='contado') document.getElementById('inp-medio').value = ultimoAgregado.medio||'Efectivo';
+  ultimoAgregado = null;
+  document.getElementById('inp-monto').value='';
+  document.getElementById('inp-monto').focus();
+  mostrarResumenLote();
+};
+window.terminarLote = function(){
+  grupoActivo = null;
+  ocultarBannerLote();
   document.getElementById('inp-prov').value='';
   document.getElementById('inp-monto').value='';
   document.getElementById('inp-fecha-cte').value='';
@@ -1347,9 +1420,7 @@ function render(){
       bSem.length+' boleta'+(bSem.length!==1?'s':'')+
       (ctePendAnteriores.length>0?` + ${ctePendAnteriores.length} cta. cte. pendiente${ctePendAnteriores.length!==1?'s':''} de semanas anteriores`:'');
 
-    const tbB=document.getElementById('tbl-boletas');
-    if(!todasVisibles.length) tbB.innerHTML='<tr class="empty-row"><td colspan="10">Sin boletas esta semana</td></tr>';
-    else tbB.innerHTML=todasVisibles.map(b=>{
+    const filaBoletaHTML = b => {
       const esPendAnterior = b.tipo==='cte'&&!b.pagadaCte&&(!sem || b.semanaId!==sem.id);
       const medioTexto = b.tipo==='cte'
         ? (b.pagadaCte?(b.medioPagoCte==='Transferencia'?'🏦 Transf.':'💵 Efectivo'):'—')
@@ -1371,7 +1442,58 @@ function render(){
           <button class="icon-btn danger" onclick="eliminarBoleta('${b.id}')">✕</button>
         </div></td>
       </tr>`;
-    }).join('');
+    };
+
+    // Agrupamos por lote (grupoId): boletas cargadas juntas del mismo proveedor
+    // se muestran como una sola fila con el total, desplegable para ver el detalle.
+    const lotes = {};
+    const sueltas = [];
+    todasVisibles.forEach(b=>{
+      if(b.grupoId){ (lotes[b.grupoId] = lotes[b.grupoId]||[]).push(b); }
+      else sueltas.push(b);
+    });
+    const unidades = [];
+    sueltas.forEach(b=>unidades.push({orden:b.fechaHora||b.fecha, html:filaBoletaHTML(b)}));
+    Object.values(lotes).forEach(items=>{
+      if(items.length<2){ unidades.push({orden:items[0].fechaHora||items[0].fecha, html:filaBoletaHTML(items[0])}); return; }
+      const grupoId = items[0].grupoId;
+      const total = items.reduce((a,b)=>a+b.monto,0);
+      const {proveedor, empresa, categoria, tipo, medio} = items[0];
+      const orden = items.reduce((mx,b)=>((b.fechaHora||b.fecha)>mx?(b.fechaHora||b.fecha):mx), items[0].fechaHora||items[0].fecha);
+      const todasPagadasCte = tipo==='cte' && items.every(b=>b.pagadaCte);
+      const ningunaPagadaCte = tipo==='cte' && items.every(b=>!b.pagadaCte);
+      const estadoTxt = tipo==='contado' ? '<span class="badge contado">Pagada</span>'
+        : todasPagadasCte ? '<span class="badge pagada-cte">Pagada</span>'
+        : ningunaPagadaCte ? '<span class="badge cte">Pendiente</span>'
+        : '<span class="badge cte">Parcial</span>';
+      const medioTexto = tipo==='contado' ? (medio==='Transferencia'?'🏦 Transf.':medio==='Tarjeta'?'💳 Tarjeta':'💵 Efectivo') : '—';
+      const rowId = 'lote-body-'+grupoId;
+      const html = `<tr class="lote-resumen" style="cursor:pointer;background:var(--surface2)" onclick="toggleLote('${rowId}')">
+        <td style="font-size:12px;color:var(--text3);white-space:nowrap">${fmtFH(orden)}</td>
+        <td><span id="${rowId}-chev">▸</span> <strong>${proveedor}</strong> <span class="badge" style="font-size:9px">${items.length} boletas</span></td>
+        <td>${empresa||'—'}</td>
+        <td>${categoria||'—'}</td>
+        <td><span class="badge ${tipo}">${tipo==='contado'?'Contado':'Cta. Cte.'}</span></td>
+        <td style="font-size:12px">${medioTexto}</td>
+        <td><strong>${fmt(total)}</strong></td>
+        <td>${estadoTxt}</td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr class="lote-detalle" id="${rowId}" style="display:none">
+        <td colspan="10" style="padding:0">
+          <div style="padding:2px 6px 8px 28px;border-left:2px solid var(--border);margin:0 8px 6px 8px">
+            <table style="width:100%"><tbody>${items.map(filaBoletaHTML).join('')}</tbody></table>
+          </div>
+        </td>
+      </tr>`;
+      unidades.push({orden, html});
+    });
+    unidades.sort((a,b)=>(b.orden>a.orden?1:-1));
+
+    const tbB=document.getElementById('tbl-boletas');
+    if(!unidades.length) tbB.innerHTML='<tr class="empty-row"><td colspan="10">Sin boletas esta semana</td></tr>';
+    else tbB.innerHTML=unidades.map(u=>u.html).join('');
   
   
   // ── SEMANAL ──
@@ -1507,8 +1629,10 @@ function render(){
       ).reduce((a,cj)=>a+(cj.total||0),0);
       const balanceMes  = ingresosMes - total;
 
-      // Semanas del mes
-      const semMes = semanas.filter(s=>s.inicio>=m.inicio&&s.inicio<=fin);
+      // Semanas del mes. Usamos mesDeFecha (no un rango suelto) para que una
+      // semana que arranca el mismo día que se cerró el mes anterior quede
+      // solo en el mes nuevo, y no aparezca duplicada en los dos.
+      const semMes = semanas.filter(s=>{ const mm = mesDeFecha(s.inicio); return mm && mm.id===m.id; });
 
       // Por categoría
       const cats = {};
@@ -1787,6 +1911,15 @@ window.exportarExcel = function(){
   const fecha=new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
   XLSX.writeFile(wb,`boletas_${fecha}.xlsx`);
 };
+window.toggleLote = function(bodyId){
+  const body = document.getElementById(bodyId);
+  if(!body) return;
+  const abrir = body.style.display==='none';
+  body.style.display = abrir?'table-row':'none';
+  const chev = document.getElementById(bodyId+'-chev');
+  if(chev) chev.textContent = abrir?'▾':'▸';
+};
+
 window.toggleMes = function(bodyId, chevronId){
   const body = document.getElementById(bodyId);
   const chev = document.getElementById(chevronId);
