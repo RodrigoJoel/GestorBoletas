@@ -167,6 +167,79 @@ function mesDeFecha(fecha){
   return null;
 }
 
+// ── BUSCAR BOLETA POR MONTO (solo mes activo) ──
+window.abrirModalBuscarMonto = function(){
+  const input = document.getElementById('buscar-monto-input');
+  input.value = '';
+  document.getElementById('buscar-monto-prov').value = '';
+  document.getElementById('resultado-buscar-monto').innerHTML = '';
+  const mesActivo = meses.find(m=>!m.cerrado);
+  document.getElementById('buscar-monto-mes-badge').textContent = mesActivo
+    ? `Buscando solo en el mes activo: ${mesActivo.mes}`
+    : 'No hay ningún mes activo abierto.';
+  document.getElementById('modal-buscar-monto').classList.add('open');
+  setTimeout(()=>input.focus(), 50);
+};
+window.cerrarModalBuscarMonto = function(){
+  document.getElementById('modal-buscar-monto').classList.remove('open');
+};
+
+function filaResultadoBuscarMonto(b, diff){
+  return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+    <div><strong>${fmt(b.monto)}</strong> — ${b.proveedor||'Sin proveedor'}
+      <span class="badge ${b.tipo==='cte'?'cte':'contado'}">${b.tipo==='cte'?'Cta. Cte.':'Contado'}</span>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px">${fmtF(b.fecha)} · ${b.empresa||'—'}${diff!=null?' · diferencia de '+fmt(diff):''}</div>
+  </div>`;
+}
+
+window.buscarMontoBoleta = function(){
+  const cont = document.getElementById('resultado-buscar-monto');
+  const mesActivo = meses.find(m=>!m.cerrado);
+  if(!mesActivo){
+    cont.innerHTML = '<div class="alert warning">No hay un mes activo abierto para buscar.</div>';
+    return;
+  }
+  const rawMonto = document.getElementById('buscar-monto-input').value;
+  const rawProv  = document.getElementById('buscar-monto-prov').value.toLowerCase().trim();
+  const monto = rawMonto.trim() ? parseFloat(rawMonto) : null;
+  if(!rawProv && (monto===null || isNaN(monto) || monto<=0)){ cont.innerHTML=''; return; }
+
+  let boletasMes = boletas.filter(b=>{ const m = mesDeFecha(b.fecha); return m && m.id===mesActivo.id; });
+  if(rawProv) boletasMes = boletasMes.filter(b=>(b.proveedor||'').toLowerCase().includes(rawProv));
+
+  // Solo proveedor, sin monto: listamos todo lo que ya está cargado de ese proveedor.
+  if(monto===null || isNaN(monto) || monto<=0){
+    if(!boletasMes.length){
+      cont.innerHTML = `<div class="alert warning">No hay boletas de "${rawProv}" cargadas en ${mesActivo.mes}.</div>`;
+      return;
+    }
+    cont.innerHTML = `<div class="alert info">${boletasMes.length} boleta${boletasMes.length>1?'s':''} de "${rawProv}" en ${mesActivo.mes}:</div>`
+      + boletasMes.map(b=>filaResultadoBuscarMonto(b)).join('');
+    return;
+  }
+
+  const exactas = boletasMes.filter(b=>Math.abs(b.monto-monto)<0.01);
+  if(exactas.length){
+    cont.innerHTML = `<div class="alert success">✔ Sí está cargada: ${exactas.length} boleta${exactas.length>1?'s':''} con ese monto${rawProv?` de "${rawProv}"`:''} en ${mesActivo.mes}.</div>`
+      + exactas.map(b=>filaResultadoBuscarMonto(b)).join('');
+    return;
+  }
+
+  const similares = boletasMes
+    .map(b=>({b, diff:Math.abs(b.monto-monto)}))
+    .sort((a,b)=>a.diff-b.diff)
+    .slice(0,6);
+
+  if(!similares.length){
+    cont.innerHTML = `<div class="alert warning">No hay boletas${rawProv?` de "${rawProv}"`:''} cargadas en ${mesActivo.mes} todavía.</div>`;
+    return;
+  }
+
+  cont.innerHTML = `<div class="alert warning">✘ No hay ninguna boleta de ${fmt(monto)}${rawProv?` de "${rawProv}"`:''} en ${mesActivo.mes}. Capaz no la cargaste. Montos parecidos:</div>`
+    + similares.map(s=>filaResultadoBuscarMonto(s.b, s.diff)).join('');
+};
+
 // ── NAV ──
 window.showSection = function(s, el){
   document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));

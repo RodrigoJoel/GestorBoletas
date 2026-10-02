@@ -35,6 +35,7 @@
     </div>
     <div class="topbar-right">
       <span class="user-badge" id="user-email-badge"></span>
+      <button class="btn-sm" onclick="abrirModalBuscarMonto()" title="Buscar si una boleta ya fue cargada por su monto">🔎 Buscar monto</button>
       <button class="btn-sm primary" onclick="exportarExcel()">↓ Exportar Excel</button>
       <button class="btn-sm" onclick="cerrarSesionTodos()" title="Cierra la sesión en todos los dispositivos donde esté abierta la página (requiere código)">Cerrar todas las sesiones</button>
       <button class="btn-sm danger" onclick="doLogout()">Salir</button>
@@ -602,6 +603,28 @@
     <div class="modal-actions">
       <button class="btn" onclick="cerrarModalEditarBoleta()">Cancelar</button>
       <button class="btn primary" onclick="guardarEdicionBoleta()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Buscar boleta por monto -->
+<div class="modal-overlay" id="modal-buscar-monto">
+  <div class="modal" style="max-width:480px">
+    <h3>🔎 Buscar boleta</h3>
+    <div id="buscar-monto-mes-badge" style="font-size:12px;color:var(--text3);margin-bottom:10px"></div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field">
+        <label>Monto ($)</label>
+        <input type="number" id="buscar-monto-input" min="0" step="0.01" placeholder="Ej: 100000" oninput="buscarMontoBoleta()" onkeydown="if(event.key==='Enter')buscarMontoBoleta()">
+      </div>
+      <div class="field">
+        <label>Proveedor</label>
+        <input type="text" id="buscar-monto-prov" placeholder="Ej: Coca Cola" oninput="buscarMontoBoleta()" onkeydown="if(event.key==='Enter')buscarMontoBoleta()">
+      </div>
+    </div>
+    <div id="resultado-buscar-monto" style="margin-top:12px;max-height:50vh;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="cerrarModalBuscarMonto()">Cerrar</button>
     </div>
   </div>
 </div>
