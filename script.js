@@ -1486,28 +1486,35 @@ function render(){
 
     // Tabla: boletas de la semana actual + cta cte pendientes de semanas anteriores
     const ctePendAnteriores = boletas.filter(b=>b.tipo==='cte'&&!b.pagadaCte&&(!sem || b.semanaId!==sem.id));
-    const todasVisibles = [...bSem, ...ctePendAnteriores]
+    // Cta. cte. cargadas en otra semana y pagadas en esta: su monto ya cuenta en los
+    // egresos de la semana, así que también se listan para que las filas cierren con el total.
+    const ctePagadasDeOtraSemana = sem
+      ? boletas.filter(b=>b.tipo==='cte'&&b.pagadaCte&&b.semanaIdPago===sem.id&&b.semanaId!==sem.id)
+      : [];
+    const todasVisibles = [...bSem, ...ctePendAnteriores, ...ctePagadasDeOtraSemana]
       .sort((a,b)=>((b.fechaHora||b.fecha)>(a.fechaHora||a.fecha)?1:-1));
 
     document.getElementById('count-hoy').textContent=
       bSem.length+' boleta'+(bSem.length!==1?'s':'')+
-      (ctePendAnteriores.length>0?` + ${ctePendAnteriores.length} cta. cte. pendiente${ctePendAnteriores.length!==1?'s':''} de semanas anteriores`:'');
+      (ctePendAnteriores.length>0?` + ${ctePendAnteriores.length} cta. cte. pendiente${ctePendAnteriores.length!==1?'s':''} de semanas anteriores`:'')+
+      (ctePagadasDeOtraSemana.length>0?` + ${ctePagadasDeOtraSemana.length} cta. cte. pagada${ctePagadasDeOtraSemana.length!==1?'s':''} esta semana`:'');
 
     const filaBoletaHTML = b => {
       const esPendAnterior = b.tipo==='cte'&&!b.pagadaCte&&(!sem || b.semanaId!==sem.id);
+      const esPagadaDeOtra = b.tipo==='cte'&&b.pagadaCte&&sem&&b.semanaIdPago===sem.id&&b.semanaId!==sem.id;
       const medioTexto = b.tipo==='cte'
-        ? (b.pagadaCte?(b.medioPagoCte==='Transferencia'?'🏦 Transf.':'💵 Efectivo'):'—')
+        ? (b.pagadaCte?(b.medioPagoCte==='Transferencia'?'🏦 Transf.':b.medioPagoCte==='Tarjeta'?'💳 Tarjeta':'💵 Efectivo'):'—')
         : (b.medio==='Transferencia'?'🏦 Transf.':'💵 Efectivo');
-      return `<tr style="${esPendAnterior?'background:var(--warning-bg)':''}">
+      return `<tr style="${esPendAnterior?'background:var(--warning-bg)':esPagadaDeOtra?'background:var(--success-bg)':''}">
         <td style="font-size:12px;color:var(--text3);white-space:nowrap">${fmtFH(b.fechaHora)}</td>
-        <td><strong>${b.proveedor}</strong>${esPendAnterior?` <span class="badge vencida" style="font-size:9px">Sem.${b.semanaNum||'?'}</span>`:''}</td>
+        <td><strong>${b.proveedor}</strong>${esPendAnterior?` <span class="badge vencida" style="font-size:9px">Sem.${b.semanaNum||'?'}</span>`:''}${esPagadaDeOtra?` <span class="badge pagada-cte" style="font-size:9px">Pagada · cargada Sem.${b.semanaNum||'?'}</span>`:''}</td>
         <td>${b.empresa||'—'}</td>
         <td>${b.categoria||'—'}</td>
         <td><span class="badge ${b.tipo}">${b.tipo==='contado'?'Contado':'Cta. Cte.'}</span></td>
         <td style="font-size:12px">${medioTexto}</td>
         <td><strong>${fmt(b.monto)}</strong></td>
         <td>${b.tipo==='contado'?'<span class="badge contado">Pagada</span>':b.pagadaCte?'<span class="badge pagada-cte">Pagada</span>':'<span class="badge cte">Pendiente</span>'}</td>
-        <td style="font-size:11px;color:var(--text3)">${esPendAnterior?'Vence: '+fmtF(b.fechaCte):''}</td>
+        <td style="font-size:11px;color:var(--text3)">${esPendAnterior?'Vence: '+fmtF(b.fechaCte):esPagadaDeOtra?'Pagada el '+fmtF(b.fechaPagoCte):''}</td>
         <td><div class="row-actions">
           ${b.tipo==='cte'&&!b.pagadaCte?`<button class="btn-sm success" onclick="abrirModalPago('${b.id}')">✓ Pagar</button>`:''}
           ${btnFoto(b)}
