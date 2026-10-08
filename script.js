@@ -167,6 +167,16 @@ function mesDeFecha(fecha){
   return null;
 }
 
+// ¿El movimiento pertenece a este mes? Si tiene semana asignada, va al mes de esa
+// semana (igual que las tarjetas semanales del Mensual): una boleta cargada el último
+// día de un mes, en la semana que todavía era del mes viejo, queda en el mes viejo.
+// Sin semana, se usa la fecha; en el día de cierre/apertura gana el mes nuevo.
+function fechaEnMes(fecha, m, semanaId){
+  const sem = semanaId ? semanas.find(s=>s.id===semanaId) : null;
+  const mm = (sem && mesDeFecha(sem.inicio)) || mesDeFecha(fecha);
+  return !!mm && mm.id===m.id;
+}
+
 // ── BUSCAR BOLETA POR MONTO (solo mes activo) ──
 window.abrirModalBuscarMonto = function(){
   const input = document.getElementById('buscar-monto-input');
@@ -771,8 +781,7 @@ function cajaCardHTML(cj, prefix){
 
 // ── CAJAS AGRUPADAS POR MES (se "cierran" junto con el mes, sin borrar datos) ──
 function cajasDelMes(m){
-  const fin = m.fin || hoy();
-  return cajas.filter(cj => cj.mesId === m.id || (!cj.mesId && cj.fecha>=m.inicio && cj.fecha<=fin));
+  return cajas.filter(cj => cj.mesId === m.id || (!cj.mesId && fechaEnMes(cj.fecha, m)));
 }
 
 window.renderCajasMensual = function(){
@@ -1669,12 +1678,11 @@ function render(){
   const mesActivo = meses.find(m=>!m.cerrado);
   document.getElementById('m-cant-meses').textContent=meses.length;
   if(mesActivo){
-    const fin0 = mesActivo.fin||hoy();
-    const eg0  = boletas.filter(b=>b.tipo==='contado'&&b.fecha>=mesActivo.inicio&&b.fecha<=fin0).reduce((a,b)=>a+b.monto,0)
-               + boletas.filter(b=>b.tipo==='cte'&&b.pagadaCte&&b.fechaPagoCte>=mesActivo.inicio&&b.fechaPagoCte<=fin0).reduce((a,b)=>a+b.monto,0);
+    const eg0  = boletas.filter(b=>b.tipo==='contado'&&fechaEnMes(b.fecha,mesActivo,b.semanaId)).reduce((a,b)=>a+b.monto,0)
+               + boletas.filter(b=>b.tipo==='cte'&&b.pagadaCte&&fechaEnMes(b.fechaPagoCte,mesActivo,b.semanaIdPago)).reduce((a,b)=>a+b.monto,0);
     const ing0 = cajas.filter(cj=>
       cj.mesId === mesActivo.id ||
-      (!cj.mesId && cj.fecha>=mesActivo.inicio && cj.fecha<=fin0)
+      (!cj.mesId && fechaEnMes(cj.fecha,mesActivo))
     ).reduce((a,cj)=>a+(cj.total||0),0);
     const bal0 = ing0-eg0;
     document.getElementById('m-mes-eg').textContent      = fmt(eg0);
@@ -1696,16 +1704,15 @@ function render(){
   } else {
     listaMeses.innerHTML=[...meses].reverse().map((m,idx)=>{
       const mesNum = meses.indexOf(m)+1;
-      const fin = m.fin||hoy();
-      const bMes = boletas.filter(b=>b.tipo==='contado'&&b.fecha>=m.inicio&&b.fecha<=fin);
-      const cteMes = boletas.filter(b=>b.tipo==='cte'&&b.pagadaCte&&b.fechaPagoCte>=m.inicio&&b.fechaPagoCte<=fin);
+      const bMes = boletas.filter(b=>b.tipo==='contado'&&fechaEnMes(b.fecha,m,b.semanaId));
+      const cteMes = boletas.filter(b=>b.tipo==='cte'&&b.pagadaCte&&fechaEnMes(b.fechaPagoCte,m,b.semanaIdPago));
       const cont   = bMes.reduce((a,b)=>a+b.monto,0);
       const ctePag = cteMes.reduce((a,b)=>a+b.monto,0);
       const total  = cont+ctePag;
       // Ingresos del mes (cajas)
       const ingresosMes = cajas.filter(cj=>
         cj.mesId === m.id ||
-        (!cj.mesId && cj.fecha>=m.inicio && cj.fecha<=fin)
+        (!cj.mesId && fechaEnMes(cj.fecha,m))
       ).reduce((a,cj)=>a+(cj.total||0),0);
       const balanceMes  = ingresosMes - total;
 
