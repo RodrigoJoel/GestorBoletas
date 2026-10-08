@@ -577,6 +577,7 @@ window.guardarCaja = async function(){
   const efectivo = parseFloat(document.getElementById('cj-efectivo').value)||0;
   const pyDeb    = parseFloat(document.getElementById('cj-py-debito').value)||0;
   const pyEfec   = parseFloat(document.getElementById('cj-py-efectivo').value)||0;
+  const rappi    = parseFloat(document.getElementById('cj-rappi').value)||0;
   const mp       = parseFloat(document.getElementById('cj-mp').value)||0;
   const tarjeta  = parseFloat(document.getElementById('cj-tarjeta').value)||0;
   const difTipo  = document.getElementById('cj-dif-tipo').value;
@@ -588,7 +589,7 @@ window.guardarCaja = async function(){
 
   //const total = efectivo + pyDeb + pyEfec + mp + tarjeta;
   // se saca pyefec ya que se suma en efectivo y se duplica el total de la caja
-  const total = efectivo + pyDeb + mp + tarjeta;
+  const total = efectivo + pyDeb + rappi + mp + tarjeta;
   const diferencia = difTipo==='falta' ? -difMonto : difTipo==='sobra' ? difMonto : 0;
 
   await addDoc(collection(db,'cajas'),{
@@ -598,7 +599,7 @@ window.guardarCaja = async function(){
     mesNombre: mesActivo ? mesActivo.mes : null,
     cajera, fecha, fechaCierre,
     horaInicio: hInicio||null, horaCierre: hCierre||null,
-    efectivo, pyDebito: pyDeb, pyEfectivo: pyEfec, mercadoPago: mp, tarjeta,
+    efectivo, pyDebito: pyDeb, pyEfectivo: pyEfec, rappi, mercadoPago: mp, tarjeta,
     total, difTipo, difMonto, diferencia,
     comentario: comentario||null,
     creadoEn: new Date().toISOString()
@@ -606,7 +607,7 @@ window.guardarCaja = async function(){
 
   // Limpiar form
   ['cj-cajera','cj-fecha-cierre','cj-hora-inicio','cj-hora-cierre','cj-efectivo',
-   'cj-py-debito','cj-py-efectivo','cj-mp','cj-tarjeta','cj-dif-monto','cj-comentario'].forEach(id=>{
+   'cj-py-debito','cj-py-efectivo','cj-rappi','cj-mp','cj-tarjeta','cj-dif-monto','cj-comentario'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.value='';
   });
@@ -688,6 +689,7 @@ window.renderCajas = function(){
   const totalEfec    = cajasVistas.reduce((a,b)=>a+(b.efectivo||0),0);
   const totalPYDebito = cajasVistas.reduce((a,b)=>a+(b.pyDebito||0),0);
   const totalPYEfectivo = cajasVistas.reduce((a,b)=>a+(b.pyEfectivo||0),0);
+  const totalRappi   = cajasVistas.reduce((a,b)=>a+(b.rappi||0),0);
   const totalMP      = cajasVistas.reduce((a,b)=>a+(b.mercadoPago||0),0);
   const totalTarjeta = cajasVistas.reduce((a,b)=>a+(b.tarjeta||0),0);
   const totalGen     = cajasVistas.reduce((a,b)=>a+(b.total||0),0);
@@ -698,6 +700,7 @@ window.renderCajas = function(){
   setM('mc-efectivo', fmt(totalEfec));
   setM('mc-py-debito', fmt(totalPYDebito));
   setM('mc-py-efectivo', fmt(totalPYEfectivo));
+  setM('mc-rappi',    fmt(totalRappi));
   setM('mc-mp',       fmt(totalMP));
   setM('mc-tarjeta',  fmt(totalTarjeta));
   setM('mc-total',    fmt(totalGen));
@@ -761,6 +764,10 @@ function cajaCardHTML(cj, prefix){
             <div class="medio-val">${fmt(cj.pyEfectivo||0)}</div>
           </div>
           <div class="medio-item">
+            <div class="medio-label">🛵 Rappi</div>
+            <div class="medio-val">${fmt(cj.rappi||0)}</div>
+          </div>
+          <div class="medio-item">
             <div class="medio-label">💙 Mercado Pago</div>
             <div class="medio-val">${fmt(cj.mercadoPago||0)}</div>
           </div>
@@ -797,6 +804,7 @@ window.renderCajasMensual = function(){
     const efec  = cjMes.reduce((a,c)=>a+(c.efectivo||0),0);
     const pyDeb = cjMes.reduce((a,c)=>a+(c.pyDebito||0),0);
     const pyEf  = cjMes.reduce((a,c)=>a+(c.pyEfectivo||0),0);
+    const rappi = cjMes.reduce((a,c)=>a+(c.rappi||0),0);
     const mp    = cjMes.reduce((a,c)=>a+(c.mercadoPago||0),0);
     const tarj  = cjMes.reduce((a,c)=>a+(c.tarjeta||0),0);
     const total = cjMes.reduce((a,c)=>a+(c.total||0),0);
@@ -833,6 +841,7 @@ window.renderCajasMensual = function(){
             <div class="mes-sem-fila"><span>💵 Efectivo</span><span>${fmt(efec)}</span></div>
             <div class="mes-sem-fila"><span>🛵 PY Débito</span><span>${fmt(pyDeb)}</span></div>
             <div class="mes-sem-fila"><span>🛵 PY Efectivo</span><span>${fmt(pyEf)}</span></div>
+            <div class="mes-sem-fila"><span>🛵 Rappi</span><span>${fmt(rappi)}</span></div>
             <div class="mes-sem-fila"><span>💙 Mercado Pago</span><span>${fmt(mp)}</span></div>
             <div class="mes-sem-fila"><span>💳 Tarjeta</span><span>${fmt(tarj)}</span></div>
           </div>
@@ -871,6 +880,7 @@ window.abrirEditarCaja = function(id){
   document.getElementById('edit-efectivo').value       = cj.efectivo||0;
   document.getElementById('edit-py-debito').value      = cj.pyDebito||0;
   document.getElementById('edit-py-efectivo').value    = cj.pyEfectivo||0;
+  document.getElementById('edit-rappi').value          = cj.rappi||0;
   document.getElementById('edit-mp').value             = cj.mercadoPago||0;
   document.getElementById('edit-tarjeta').value        = cj.tarjeta||0;
   document.getElementById('edit-dif-tipo').value       = cj.difTipo||'ninguna';
@@ -893,12 +903,14 @@ window.guardarEdicionCaja = async function(){
   const efectivo    = parseFloat(document.getElementById('edit-efectivo').value)||0;
   const pyDeb       = parseFloat(document.getElementById('edit-py-debito').value)||0;
   const pyEfec      = parseFloat(document.getElementById('edit-py-efectivo').value)||0;
+  const rappi       = parseFloat(document.getElementById('edit-rappi').value)||0;
   const mp          = parseFloat(document.getElementById('edit-mp').value)||0;
   const tarjeta     = parseFloat(document.getElementById('edit-tarjeta').value)||0;
   const difTipo     = document.getElementById('edit-dif-tipo').value;
   const difMonto    = parseFloat(document.getElementById('edit-dif-monto').value)||0;
   const diferencia  = difTipo==='falta'?-difMonto:difTipo==='sobra'?difMonto:0;
-  const total       = efectivo+pyDeb+pyEfec+mp+tarjeta;
+  // pyEfec no suma: ya está incluido en efectivo (igual que en guardarCaja)
+  const total       = efectivo+pyDeb+rappi+mp+tarjeta;
   const comentario  = document.getElementById('edit-comentario').value.trim()||null;
   if(!cajera){ alert('Ingresá el nombre de la cajera'); return; }
   const sem = semanaDelPago(fecha);
@@ -906,7 +918,7 @@ window.guardarEdicionCaja = async function(){
   await updateDoc(doc(db,'cajas',id),{
     cajera, fecha, fechaCierre,
     horaInicio: hInicio||null, horaCierre: hCierre||null,
-    efectivo, pyDebito:pyDeb, pyEfectivo:pyEfec, mercadoPago:mp, tarjeta,
+    efectivo, pyDebito:pyDeb, pyEfectivo:pyEfec, rappi, mercadoPago:mp, tarjeta,
     total, difTipo, difMonto, diferencia, comentario,
     semanaId: sem?sem.id:null, semanaNum: sem?sem.num:null,
     mesId: mesC?mesC.id:null, mesNombre: mesC?mesC.mes:null
@@ -1983,16 +1995,16 @@ window.exportarExcel = function(){
   XLSX.utils.book_append_sheet(wb,ws4,'Por categoría');
 
   // Hoja 5: Cajas
-  const caj5=[['Fecha','Cajera','Hora inicio','Hora cierre','Efectivo','PY Débito','PY Efectivo','Mercado Pago','Tarjeta','Total','Diferencia tipo','Diferencia $','Comentario']];
+  const caj5=[['Fecha','Cajera','Hora inicio','Hora cierre','Efectivo','PY Débito','PY Efectivo','Rappi','Mercado Pago','Tarjeta','Total','Diferencia tipo','Diferencia $','Comentario']];
   [...cajas].sort((a,b)=>a.fecha>b.fecha?1:-1).forEach(cj=>{
     caj5.push([
       cj.fecha, cj.cajera, cj.horaInicio||'', cj.horaCierre||'',
-      cj.efectivo||0, cj.pyDebito||0, cj.pyEfectivo||0, cj.mercadoPago||0,
+      cj.efectivo||0, cj.pyDebito||0, cj.pyEfectivo||0, cj.rappi||0, cj.mercadoPago||0,
       cj.tarjeta||0, cj.total||0, cj.difTipo||'ninguna', cj.diferencia||0, cj.comentario||''
     ]);
   });
   const ws5=XLSX.utils.aoa_to_sheet(caj5);
-  ws5['!cols']=[{wch:12},{wch:18},{wch:11},{wch:11},{wch:12},{wch:12},{wch:14},{wch:14},{wch:12},{wch:12},{wch:15},{wch:13},{wch:30}];
+  ws5['!cols']=[{wch:12},{wch:18},{wch:11},{wch:11},{wch:12},{wch:12},{wch:14},{wch:12},{wch:14},{wch:12},{wch:12},{wch:15},{wch:13},{wch:30}];
   XLSX.utils.book_append_sheet(wb,ws5,'Cajas');
 
   const fecha=new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
